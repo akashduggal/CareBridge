@@ -80,14 +80,14 @@ This document contains the ordered implementation tasks for the Readmission Prev
 
 ## Task 5: Routing and Protected Routes
 
-- [ ] 5.1 Set up React Router v6 with `BrowserRouter`
-- [ ] 5.2 Implement `ProtectedRoute` component — shows loading spinner while auth resolves, redirects unauthenticated users to `/login?redirect=<path>`, shows `PermissionDenied` for wrong role
-- [ ] 5.3 Define all routes: `/login` (public), `/dashboard`, `/discharges`, `/discharges/new` (Admin only), `/calls/:id`, `/escalations`, `/patients`
-- [ ] 5.4 Implement `PermissionDenied` page — "You don't have permission to access this page" with link to Dashboard
-- [ ] 5.5 Implement 404 not-found page with link to Dashboard
-- [ ] 5.6 Write component tests: unauthenticated user navigating to `/dashboard` redirects to `/login`
-- [ ] 5.7 Write component tests: Nurse/Physician accessing `/discharges/new` sees PermissionDenied
-- [ ] 5.8 Write component tests: after sign-in, user is redirected to originally requested URL from `redirect` param
+- [x] 5.1 Set up React Router v6 with `BrowserRouter`
+- [x] 5.2 Implement `ProtectedRoute` component — shows loading spinner while auth resolves, redirects unauthenticated users to `/login?redirect=<path>`, shows `PermissionDenied` for wrong role
+- [x] 5.3 Define all routes: `/login` (public), `/dashboard`, `/discharges`, `/discharges/new` (Admin only), `/calls/:id`, `/escalations`, `/patients`
+- [x] 5.4 Implement `PermissionDenied` page — "You don't have permission to access this page" with link to Dashboard
+- [x] 5.5 Implement 404 not-found page with link to Dashboard
+- [x] 5.6 Write component tests: unauthenticated user navigating to `/dashboard` redirects to `/login`
+- [x] 5.7 Write component tests: Nurse/Physician accessing `/discharges/new` sees PermissionDenied
+- [x] 5.8 Write component tests: after sign-in, user is redirected to originally requested URL from `redirect` param
 
 ---
 
