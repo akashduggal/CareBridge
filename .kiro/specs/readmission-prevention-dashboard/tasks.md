@@ -127,29 +127,29 @@ This document contains the ordered implementation tasks for the Readmission Prev
 
 ## Task 8: Application Shell and Navigation
 
-- [ ] 8.1 Implement `AppShell` layout with navigation sidebar (desktop ≥1280px) and hamburger menu (mobile/tablet <1280px)
-- [ ] 8.2 Implement responsive navigation: collapsible hamburger for <1280px, persistent sidebar for ≥1280px
-- [ ] 8.3 Implement "Demo Mode" badge in header (visible when `?demo=true` active)
-- [ ] 8.4 Implement "Connection lost — reconnecting…" persistent banner (from WebSocketContext)
-- [ ] 8.5 Implement "Connection failed — please refresh the page" banner after 5 failed reconnect attempts
-- [ ] 8.6 Implement `Sign Out` button calling `signOut()` from AuthContext
-- [ ] 8.7 Ensure navigation links are keyboard accessible with visible focus indicators (3:1 contrast)
+- [x] 8.1 Implement `AppShell` layout with navigation sidebar (desktop ≥1280px) and hamburger menu (mobile/tablet <1280px)
+- [x] 8.2 Implement responsive navigation: collapsible hamburger for <1280px, persistent sidebar for ≥1280px
+- [x] 8.3 Implement "Demo Mode" badge in header (visible when `?demo=true` active)
+- [x] 8.4 Implement "Connection lost — reconnecting…" persistent banner (from WebSocketContext)
+- [x] 8.5 Implement "Connection failed — please refresh the page" banner after 5 failed reconnect attempts
+- [x] 8.6 Implement `Sign Out` button calling `signOut()` from AuthContext
+- [x] 8.7 Ensure navigation links are keyboard accessible with visible focus indicators (3:1 contrast)
 
 ---
 
 ## Task 9: Shared UI Components
 
-- [ ] 9.1 Implement `LoadingSpinner` (full-screen variant for auth loading)
-- [ ] 9.2 Implement `SkeletonCard` and `SkeletonRow` loading placeholders
-- [ ] 9.3 Implement `EmptyState` component with illustration slot and message prop
-- [ ] 9.4 Implement `ErrorBanner` component with retry button and `role="alert"`
-- [ ] 9.5 Implement `RiskTierBadge` — color + text label (never color alone); green/amber/red per tier
-- [ ] 9.6 Implement `DiagnosisGroupBadge`
-- [ ] 9.7 Implement `CallOutcomePill`
-- [ ] 9.8 Implement `Notification` toast — auto-dismiss after 5s for status-only; persistent for actionable content; manual dismiss for errors
-- [ ] 9.9 Implement `Pagination` component — previous/next controls, current page indicator, 25 rows per page
-- [ ] 9.10 Implement `FocusTrap` utility for modal dialogs and slide-out drawers
-- [ ] 9.11 Ensure all shared components meet WCAG 2.1 AA: focus indicators, aria-labels, color contrast ≥4.5:1
+- [x] 9.1 Implement `LoadingSpinner` (full-screen variant for auth loading)
+- [x] 9.2 Implement `SkeletonCard` and `SkeletonRow` loading placeholders
+- [x] 9.3 Implement `EmptyState` component with illustration slot and message prop
+- [x] 9.4 Implement `ErrorBanner` component with retry button and `role="alert"`
+- [x] 9.5 Implement `RiskTierBadge` — color + text label (never color alone); green/amber/red per tier
+- [x] 9.6 Implement `DiagnosisGroupBadge`
+- [x] 9.7 Implement `CallOutcomePill`
+- [x] 9.8 Implement `Notification` toast — auto-dismiss after 5s for status-only; persistent for actionable content; manual dismiss for errors
+- [x] 9.9 Implement `Pagination` component — previous/next controls, current page indicator, 25 rows per page
+- [x] 9.10 Implement `FocusTrap` utility for modal dialogs and slide-out drawers
+- [x] 9.11 Ensure all shared components meet WCAG 2.1 AA: focus indicators, aria-labels, color contrast ≥4.5:1
 
 ---
 
