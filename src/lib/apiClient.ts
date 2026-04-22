@@ -3,7 +3,7 @@ import { auth } from '@/lib/firebase'
 
 const PROACTIVE_REFRESH_THRESHOLD_MS = 5 * 60 * 1000 // 5 minutes
 
-async function getValidToken(): Promise<string> {
+export async function getValidToken(): Promise<string> {
   const user = auth.currentUser
   if (!user) throw new Error('Not authenticated')
   const tokenResult = await getIdTokenResult(user)

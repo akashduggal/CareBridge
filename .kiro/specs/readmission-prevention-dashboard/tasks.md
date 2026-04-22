@@ -93,10 +93,10 @@ This document contains the ordered implementation tasks for the Readmission Prev
 
 ## Task 6: TanStack Query and API Client Setup
 
-- [ ] 6.1 Configure `QueryClient` with staleTime 5 min, cacheTime 10 min, retry 1, refetchOnWindowFocus/Reconnect true
-- [ ] 6.2 Implement `apiClient` fetch wrapper — attaches `Authorization: Bearer <token>` header, handles proactive token refresh, handles 401 reactive refresh
-- [ ] 6.3 Define query key factory: `queryKeys.dashboard()`, `queryKeys.discharges(params)`, `queryKeys.calls(id)`, `queryKeys.escalations()`, `queryKeys.patients(params)`
-- [ ] 6.4 Write unit tests: token attached to every outbound request; proactive refresh called when token expires < 5 min
+- [x] 6.1 Configure `QueryClient` with staleTime 5 min, cacheTime 10 min, retry 1, refetchOnWindowFocus/Reconnect true
+- [x] 6.2 Implement `apiClient` fetch wrapper — attaches `Authorization: Bearer <token>` header, handles proactive token refresh, handles 401 reactive refresh
+- [x] 6.3 Define query key factory: `queryKeys.dashboard()`, `queryKeys.discharges(params)`, `queryKeys.calls(id)`, `queryKeys.escalations()`, `queryKeys.patients(params)`
+- [x] 6.4 Write unit tests: token attached to every outbound request; proactive refresh called when token expires < 5 min
   - `// Feature: readmission-prevention-dashboard, Property 17: Token Refresh Proactive Strategy`
 
 ---
