@@ -9,6 +9,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route, Navigate, useSearchParams } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 // ─── Firebase mocks ───────────────────────────────────────────────────────────
 
@@ -27,24 +28,31 @@ vi.mock('@/lib/firebase', () => ({
   auth: { currentUser: null, signOut: vi.fn() },
 }))
 
+vi.mock('@/lib/apiClient', () => ({ apiClient: vi.fn() }))
+
 // ─── Mock useAuth ─────────────────────────────────────────────────────────────
 
 vi.mock('@/contexts/AuthContext', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/contexts/AuthContext')>()
-  return {
-    ...actual,
-    useAuth: vi.fn(),
-  }
+  return { ...actual, useAuth: vi.fn() }
+})
+
+// ─── Mock useWebSocket (needed by DashboardPage via AppShell) ─────────────────
+
+vi.mock('@/contexts/WebSocketContext', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/contexts/WebSocketContext')>()
+  return { ...actual, useWebSocket: vi.fn() }
 })
 
 import { useAuth } from '@/contexts/AuthContext'
+import { useWebSocket } from '@/contexts/WebSocketContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { PermissionDenied } from '@/pages/PermissionDenied'
 import { LoginPage } from '@/pages/LoginPage'
 import { DashboardPage } from '@/pages/DashboardPage'
 import { DischargeFormPage } from '@/pages/DischargeFormPage'
 import type { Mock } from 'vitest'
-import type { AuthContextValue } from '@/types'
+import type { AuthContextValue, WebSocketContextValue } from '@/types'
 import type { User } from 'firebase/auth'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -67,8 +75,21 @@ function mockAuth(state: AuthState) {
   } satisfies AuthContextValue)
 }
 
+function mockWs() {
+  ;(useWebSocket as Mock).mockReturnValue({
+    connected: false,
+    reconnecting: false,
+    connectionAttempts: 0,
+    lastEventId: null,
+  } satisfies WebSocketContextValue)
+}
+
 /** Fake user object — only needs to be truthy for ProtectedRoute checks */
 const fakeUser = { uid: 'u1', email: 'test@example.com' } as unknown as User
+
+function makeQc() {
+  return new QueryClient({ defaultOptions: { queries: { retry: false } } })
+}
 
 /**
  * Render the full route tree using MemoryRouter so we can control the initial
@@ -76,20 +97,21 @@ const fakeUser = { uid: 'u1', email: 'test@example.com' } as unknown as User
  */
 function renderRoutes(initialPath: string) {
   return render(
-    <MemoryRouter initialEntries={[initialPath]}>
-      <Routes>
-        {/* Public */}
-        <Route path="/login" element={<LoginPage />} />
+    <QueryClientProvider client={makeQc()}>
+      <MemoryRouter initialEntries={[initialPath]}>
+        <Routes>
+          {/* Public */}
+          <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected — all roles */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
+          {/* Protected — all roles */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
 
         {/* Protected — Admin only */}
         <Route
@@ -105,6 +127,7 @@ function renderRoutes(initialPath: string) {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </MemoryRouter>
+    </QueryClientProvider>
   )
 }
 
@@ -113,6 +136,7 @@ function renderRoutes(initialPath: string) {
 describe('5.6 – Unauthenticated user navigating to /dashboard redirects to /login', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockWs()
   })
 
   it('redirects to /login when user is null and auth is resolved', async () => {
@@ -120,9 +144,9 @@ describe('5.6 – Unauthenticated user navigating to /dashboard redirects to /lo
 
     renderRoutes('/dashboard')
 
-    // After redirect, the LoginPage stub should be rendered
+    // After redirect, the LoginPage should be rendered (check for sign-in button)
     await waitFor(() => {
-      expect(screen.getByText('Login')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /sign in with google/i })).toBeInTheDocument()
     })
 
     // Dashboard content should NOT be visible
@@ -157,6 +181,7 @@ describe('5.6 – Unauthenticated user navigating to /dashboard redirects to /lo
 describe('5.7 – Nurse/Physician accessing /discharges/new sees PermissionDenied', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockWs()
   })
 
   it('shows PermissionDenied for nurse role', async () => {
@@ -219,6 +244,7 @@ describe('5.7 – Nurse/Physician accessing /discharges/new sees PermissionDenie
 describe('5.8 – After sign-in, user is redirected to originally requested URL from redirect param', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockWs()
   })
 
   it('unauthenticated user visiting /dashboard is redirected to /login with redirect param', async () => {
@@ -237,19 +263,21 @@ describe('5.8 – After sign-in, user is redirected to originally requested URL 
     }
 
     render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <Routes>
-          <Route path="/login" element={<LoginPageWithCapture />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider client={makeQc()}>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <Routes>
+            <Route path="/login" element={<LoginPageWithCapture />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     )
 
     await waitFor(() => {
@@ -265,19 +293,21 @@ describe('5.8 – After sign-in, user is redirected to originally requested URL 
     mockAuth({ user: fakeUser, role: 'nurse', loading: false })
 
     render(
-      <MemoryRouter initialEntries={['/login?redirect=%2Fdashboard']}>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider client={makeQc()}>
+        <MemoryRouter initialEntries={['/login?redirect=%2Fdashboard']}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     )
 
     // LoginPage should redirect to /dashboard since user is authenticated
@@ -292,19 +322,21 @@ describe('5.8 – After sign-in, user is redirected to originally requested URL 
     mockAuth({ user: fakeUser, role: 'admin', loading: false })
 
     render(
-      <MemoryRouter initialEntries={['/login']}>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider client={makeQc()}>
+        <MemoryRouter initialEntries={['/login']}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     )
 
     await waitFor(() => {

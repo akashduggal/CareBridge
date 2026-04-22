@@ -16,6 +16,7 @@ import type {
   ApiResponse,
   CallCompletedEvent,
   CallStartedEvent,
+  DashboardStats,
   Discharge,
   DischargeCreatedEvent,
   Escalation,
@@ -117,6 +118,22 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             },
           }
         })
+        // Update dashboard stats: decrement pendingCalls (never below 0),
+        // increment the appropriate tier, and increment completedToday
+        queryClient.setQueryData(queryKeys.dashboard(), (old: unknown) => {
+          if (!old) return old
+          const stats = old as DashboardStats
+          const tierKey = `tier${event.riskTier}` as 'tier1' | 'tier2' | 'tier3'
+          return {
+            ...stats,
+            pendingCalls: Math.max(0, stats.pendingCalls - 1),
+            completedToday: stats.completedToday + 1,
+            tierDistribution: {
+              ...stats.tierDistribution,
+              [tierKey]: stats.tierDistribution[tierKey] + 1,
+            },
+          }
+        })
         // Invalidate discharges to refresh pending calls count
         void queryClient.invalidateQueries({ queryKey: ['discharges'] })
       } else if (isDischargeCreatedEvent(event)) {
@@ -127,6 +144,15 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           return {
             ...response,
             data: [event.discharge, ...response.data],
+          }
+        })
+        // Increment today's discharges count in dashboard stats cache
+        queryClient.setQueryData(queryKeys.dashboard(), (old: unknown) => {
+          if (!old) return old
+          const stats = old as DashboardStats
+          return {
+            ...stats,
+            todayDischarges: stats.todayDischarges + 1,
           }
         })
       } else if (isCallStartedEvent(event)) {
@@ -149,6 +175,15 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
           return {
             ...response,
             data: [...response.data, event.escalation],
+          }
+        })
+        // Increment active escalations count in dashboard stats cache (never below 0)
+        queryClient.setQueryData(queryKeys.dashboard(), (old: unknown) => {
+          if (!old) return old
+          const stats = old as DashboardStats
+          return {
+            ...stats,
+            activeEscalations: Math.max(0, stats.activeEscalations + 1),
           }
         })
       } else {

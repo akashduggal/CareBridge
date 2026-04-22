@@ -155,33 +155,33 @@ This document contains the ordered implementation tasks for the Readmission Prev
 
 ## Task 10: Login Page
 
-- [ ] 10.1 Implement `LoginPage` at `/login` with "Sign in with Google" button
-- [ ] 10.2 Call `signInWithGoogle()` on button click; show loading spinner during sign-in
-- [ ] 10.3 Display user-friendly error messages for: popup dismissed, network error, popup blocked, unauthorized account
-- [ ] 10.4 Redirect to `redirect` query param URL after successful sign-in, or `/dashboard` if absent
-- [ ] 10.5 Add `aria-label` on sign-in button; error messages via `role="alert"`
-- [ ] 10.6 Write component tests: button triggers `signInWithPopup` with `GoogleAuthProvider`
-- [ ] 10.7 Write component tests: error displayed on sign-in failure; no raw Firebase error codes shown
-- [ ] 10.8 Write component tests: redirect to originally requested URL after successful sign-in
+- [x] 10.1 Implement `LoginPage` at `/login` with "Sign in with Google" button
+- [x] 10.2 Call `signInWithGoogle()` on button click; show loading spinner during sign-in
+- [x] 10.3 Display user-friendly error messages for: popup dismissed, network error, popup blocked, unauthorized account
+- [x] 10.4 Redirect to `redirect` query param URL after successful sign-in, or `/dashboard` if absent
+- [x] 10.5 Add `aria-label` on sign-in button; error messages via `role="alert"`
+- [x] 10.6 Write component tests: button triggers `signInWithPopup` with `GoogleAuthProvider`
+- [x] 10.7 Write component tests: error displayed on sign-in failure; no raw Firebase error codes shown
+- [x] 10.8 Write component tests: redirect to originally requested URL after successful sign-in
 
 ---
 
 ## Task 11: Dashboard Page
 
-- [ ] 11.1 Implement `DashboardPage` at `/dashboard` — fetch `GET /dashboard/stats` with `useQuery`
-- [ ] 11.2 Render three summary cards: today's discharges, pending calls, active escalations
-- [ ] 11.3 Render donut chart (Recharts) for Risk Tier distribution with ARIA labels and ≥4.5:1 color contrast
-- [ ] 11.4 Render bar chart (Recharts) for daily discharge volume (past 7 days) with ARIA labels
-- [ ] 11.5 Provide text-based alternative for chart data accessible to screen readers
-- [ ] 11.6 Show loading skeletons for cards and charts while fetching
-- [ ] 11.7 Show `ErrorBanner` with retry on fetch failure
-- [ ] 11.8 Handle `discharge_created` WebSocket event: increment today's discharges count
-- [ ] 11.9 Handle `call_completed` WebSocket event: update pending calls count and tier distribution; pending calls count never goes negative
-- [ ] 11.10 Handle `escalation_triggered` WebSocket event: increment active escalations count
-- [ ] 11.11 Responsive layout: charts stack vertically on mobile/tablet, side-by-side on desktop
-- [ ] 11.12 Write integration test: mount → loading skeleton → data loaded → WebSocket `discharge_created` → count increments
+- [x] 11.1 Implement `DashboardPage` at `/dashboard` — fetch `GET /dashboard/stats` with `useQuery`
+- [x] 11.2 Render three summary cards: today's discharges, pending calls, active escalations
+- [x] 11.3 Render donut chart (Recharts) for Risk Tier distribution with ARIA labels and ≥4.5:1 color contrast
+- [x] 11.4 Render bar chart (Recharts) for daily discharge volume (past 7 days) with ARIA labels
+- [x] 11.5 Provide text-based alternative for chart data accessible to screen readers
+- [x] 11.6 Show loading skeletons for cards and charts while fetching
+- [x] 11.7 Show `ErrorBanner` with retry on fetch failure
+- [x] 11.8 Handle `discharge_created` WebSocket event: increment today's discharges count
+- [x] 11.9 Handle `call_completed` WebSocket event: update pending calls count and tier distribution; pending calls count never goes negative
+- [x] 11.10 Handle `escalation_triggered` WebSocket event: increment active escalations count
+- [x] 11.11 Responsive layout: charts stack vertically on mobile/tablet, side-by-side on desktop
+- [x] 11.12 Write integration test: mount → loading skeleton → data loaded → WebSocket `discharge_created` → count increments
   - `// Feature: readmission-prevention-dashboard, Property 16: Dashboard WebSocket Event Count Updates`
-- [ ] 11.13 Write unit test: sum of tier1+tier2+tier3 in donut chart equals `completedToday`, not `todayDischarges`
+- [x] 11.13 Write unit test: sum of tier1+tier2+tier3 in donut chart equals `completedToday`, not `todayDischarges`
   - `// Feature: readmission-prevention-dashboard, Property 15: Dashboard Tier Distribution Invariant`
 
 ---
