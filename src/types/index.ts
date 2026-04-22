@@ -187,6 +187,7 @@ export interface AuthContextValue {
   user: User | null; // Firebase User
   role: UserRole | null;
   loading: boolean;
+  authError: string | null;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   refreshToken: () => Promise<string>;

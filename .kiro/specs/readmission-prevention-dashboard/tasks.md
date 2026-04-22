@@ -57,23 +57,23 @@ This document contains the ordered implementation tasks for the Readmission Prev
 
 ## Task 4: Firebase Authentication — AuthContext
 
-- [ ] 4.1 Initialize Firebase app with environment variables (`VITE_FIREBASE_*`)
-- [ ] 4.2 Implement `AuthProvider` with `onAuthStateChanged` observer
-- [ ] 4.3 Extract `role` from Firebase Custom Claims via `getIdTokenResult()` on auth state change
-- [ ] 4.4 Sign out immediately and display error if no valid role claim found after sign-in
-- [ ] 4.5 Implement `signInWithGoogle()` using `signInWithPopup` + `GoogleAuthProvider`
-- [ ] 4.6 Implement `signOut()` — clears auth state, clears WebSocket deduplication cache, redirects to `/login`
-- [ ] 4.7 Implement `refreshToken()` with shared-promise mutex to prevent concurrent refresh calls
-- [ ] 4.8 Implement proactive token refresh interceptor: check expiry < 5 min before each API request, call `getIdToken(true)` if needed
-- [ ] 4.9 Implement reactive 401 handler: refresh token once, retry request; if second 401, sign out and redirect
-- [ ] 4.10 Expose `useAuth()` hook
-- [ ] 4.11 Write unit tests: auth state loading spinner shown until resolved; protected content not rendered before resolution
+- [x] 4.1 Initialize Firebase app with environment variables (`VITE_FIREBASE_*`)
+- [x] 4.2 Implement `AuthProvider` with `onAuthStateChanged` observer
+- [x] 4.3 Extract `role` from Firebase Custom Claims via `getIdTokenResult()` on auth state change
+- [x] 4.4 Sign out immediately and display error if no valid role claim found after sign-in
+- [x] 4.5 Implement `signInWithGoogle()` using `signInWithPopup` + `GoogleAuthProvider`
+- [x] 4.6 Implement `signOut()` — clears auth state, clears WebSocket deduplication cache, redirects to `/login`
+- [x] 4.7 Implement `refreshToken()` with shared-promise mutex to prevent concurrent refresh calls
+- [x] 4.8 Implement proactive token refresh interceptor: check expiry < 5 min before each API request, call `getIdToken(true)` if needed
+- [x] 4.9 Implement reactive 401 handler: refresh token once, retry request; if second 401, sign out and redirect
+- [x] 4.10 Expose `useAuth()` hook
+- [x] 4.11 Write unit tests: auth state loading spinner shown until resolved; protected content not rendered before resolution
   - `// Feature: readmission-prevention-dashboard, Property 19: Authentication State Resolution Gating`
-- [ ] 4.12 Write unit tests: `signInWithPopup` called with `GoogleAuthProvider` on button click
-- [ ] 4.13 Write unit tests: user without role claim is signed out with "Your account is not authorized" error
-- [ ] 4.14 Write unit tests: concurrent 401 responses trigger exactly one `getIdToken(true)` call
+- [x] 4.12 Write unit tests: `signInWithPopup` called with `GoogleAuthProvider` on button click
+- [x] 4.13 Write unit tests: user without role claim is signed out with "Your account is not authorized" error
+- [x] 4.14 Write unit tests: concurrent 401 responses trigger exactly one `getIdToken(true)` call
   - `// Feature: readmission-prevention-dashboard, Property 18: Token Refresh Concurrent Request Deduplication`
-- [ ] 4.15 Write PBT for role enforcement: `fc.constantFrom("nurse","physician","admin","invalid","")` — valid roles grant access, invalid trigger sign-out
+- [x] 4.15 Write PBT for role enforcement: `fc.constantFrom("nurse","physician","admin","invalid","")` — valid roles grant access, invalid trigger sign-out
   - `// Feature: readmission-prevention-dashboard, Property 20: Role-Based Route Access Enforcement`
 
 ---
