@@ -34,24 +34,23 @@ This document contains the ordered implementation tasks for the Readmission Prev
 
 ## Task 3: Utility Functions and Property-Based Tests
 
-- [ ] 3.1 Implement `deriveRiskTier(riskScore: number): RiskTier` — returns 1 if ≤3, 2 if 4–6, 3 if ≥7
-- [ ] 3.2 Write PBT for `deriveRiskTier`: `fc.integer({ min: 0, max: 20 })` — verify correct tier for all inputs with boundaries at 3 and 6
+- [x] 3.1 Implement `deriveRiskTier(riskScore: number): RiskTier` — returns 1 if ≤3, 2 if 4–6, 3 if ≥7
+- [x] 3.2 Write PBT for `deriveRiskTier`: `fc.integer({ min: 0, max: 20 })` — verify correct tier for all inputs with boundaries at 3 and 6
   - `// Feature: readmission-prevention-dashboard, Property 1: Risk Tier Derivation Consistency`
 - [ ] 3.3 Implement `validateICD10(code: string): boolean` — pattern `^[A-Z][0-9]{2}(\.[0-9A-Z]{1,4})?$`
-- [ ] 3.4 Write PBT for `validateICD10` correctness: `fc.string()` — verify true iff matches pattern
+- [x] 3.4 Write PBT for `validateICD10` correctness: `fc.string()` — verify true iff matches pattern
   - `// Feature: readmission-prevention-dashboard, Property 2: ICD-10 Validation Correctness`
-- [ ] 3.5 Write PBT for `validateICD10` idempotence: valid code generator — verify `validateICD10(s) === validateICD10(s)`
-  - `// Feature: readmission-prevention-dashboard, Property 3: ICD-10 Validation Idempotence`
-- [ ] 3.6 Implement `shouldShowLowConfidenceWarning(confidence: number): boolean` — returns `confidence < 0.6`
-- [ ] 3.7 Write PBT for `shouldShowLowConfidenceWarning`: `fc.float({ min: 0, max: 1 })` — verify badge visible iff confidence < 0.6
+- [x] 3.5 Write PBT for `validateICD10` idempotence: valid code generator — verify `validateICD10(s) === validateICD10(s)`
+- [x] 3.6 Implement `shouldShowLowConfidenceWarning(confidence: number): boolean` — returns `confidence < 0.6`
+- [x] 3.7 Write PBT for `shouldShowLowConfidenceWarning`: `fc.float({ min: 0, max: 1 })` — verify badge visible iff confidence < 0.6
   - `// Feature: readmission-prevention-dashboard, Property 5: Low Confidence Warning Badge Consistency`
-- [ ] 3.8 Implement `getEscalationSection(riskTier, confidence)` — Tier 3 precedence, then Tier 2, then Human Review
-- [ ] 3.9 Write PBT for `getEscalationSection` exclusivity: `fc.record({ riskTier: fc.integer({min:1,max:3}), confidence: fc.float({min:0,max:1}) })` — verify exactly one section returned
+- [x] 3.8 Implement `getEscalationSection(riskTier, confidence)` — Tier 3 precedence, then Tier 2, then Human Review
+- [x] 3.9 Write PBT for `getEscalationSection` exclusivity: `fc.record({ riskTier: fc.integer({min:1,max:3}), confidence: fc.float({min:0,max:1}) })` — verify exactly one section returned
   - `// Feature: readmission-prevention-dashboard, Property 4: Escalation Routing Exclusivity`
-- [ ] 3.10 Implement `getRiskTierColor(tier: RiskTier): string` — green/amber/red mapping
-- [ ] 3.11 Implement `formatDateTime(iso: string): string` and `formatDate(iso: string): string` display helpers
-- [ ] 3.12 Implement `calculateReconnectDelay(attempt: number): number` — `Math.min(1000 * 2^attempt, 30000)`
-- [ ] 3.13 Write PBT for `calculateReconnectDelay`: `fc.integer({ min: 0, max: 10 })` — verify non-decreasing, never exceeds 30000
+- [x] 3.10 Implement `getRiskTierColor(tier: RiskTier): string` — green/amber/red mapping
+- [x] 3.11 Implement `formatDateTime(iso: string): string` and `formatDate(iso: string): string` display helpers
+- [x] 3.12 Implement `calculateReconnectDelay(attempt: number): number` — `Math.min(1000 * 2^attempt, 30000)`
+- [x] 3.13 Write PBT for `calculateReconnectDelay`: `fc.integer({ min: 0, max: 10 })` — verify non-decreasing, never exceeds 30000
   - `// Feature: readmission-prevention-dashboard, Property 12: WebSocket Reconnection Exponential Backoff`
 
 ---
