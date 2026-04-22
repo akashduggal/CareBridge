@@ -103,25 +103,25 @@ This document contains the ordered implementation tasks for the Readmission Prev
 
 ## Task 7: WebSocket Context
 
-- [ ] 7.1 Implement `WebSocketProvider` — waits for auth state resolution before connecting
-- [ ] 7.2 Connect to `/ws?token=<firebase_id_token>` only after valid token available
-- [ ] 7.3 Implement event parsing with discriminated union type guard
-- [ ] 7.4 Implement in-memory event deduplication cache (Set of event IDs); clear on sign-out
-- [ ] 7.5 Implement exponential backoff reconnection using `calculateReconnectDelay`; call `getIdToken(true)` before each reconnect attempt
-- [ ] 7.6 Track `connectionAttempts`; after 5 failures display "Connection failed — please refresh the page"
-- [ ] 7.7 On reconnect success: hide banner, call `queryClient.invalidateQueries()` for all active queries
-- [ ] 7.8 Handle `call_completed`: update call record in TanStack Query cache
-- [ ] 7.9 Handle `discharge_created`: prepend to page-1 discharges cache; show notification banner on other pages
-- [ ] 7.10 Handle `call_started`: update discharge `callStatus` in cache
-- [ ] 7.11 Handle `escalation_triggered`: add to escalations cache
-- [ ] 7.12 Log unrecognized event types to browser console without throwing
-- [ ] 7.13 Expose `useWebSocket()` hook
-- [ ] 7.14 Write unit tests: WebSocket NOT connected before auth resolves
+- [x] 7.1 Implement `WebSocketProvider` — waits for auth state resolution before connecting
+- [x] 7.2 Connect to `/ws?token=<firebase_id_token>` only after valid token available
+- [x] 7.3 Implement event parsing with discriminated union type guard
+- [x] 7.4 Implement in-memory event deduplication cache (Set of event IDs); clear on sign-out
+- [x] 7.5 Implement exponential backoff reconnection using `calculateReconnectDelay`; call `getIdToken(true)` before each reconnect attempt
+- [x] 7.6 Track `connectionAttempts`; after 5 failures display "Connection failed — please refresh the page"
+- [x] 7.7 On reconnect success: hide banner, call `queryClient.invalidateQueries()` for all active queries
+- [x] 7.8 Handle `call_completed`: update call record in TanStack Query cache
+- [x] 7.9 Handle `discharge_created`: prepend to page-1 discharges cache; show notification banner on other pages
+- [x] 7.10 Handle `call_started`: update discharge `callStatus` in cache
+- [x] 7.11 Handle `escalation_triggered`: add to escalations cache
+- [x] 7.12 Log unrecognized event types to browser console without throwing
+- [x] 7.13 Expose `useWebSocket()` hook
+- [x] 7.14 Write unit tests: WebSocket NOT connected before auth resolves
   - `// Feature: readmission-prevention-dashboard, Property 13: WebSocket Connection Token Gating`
-- [ ] 7.15 Write unit tests: reconnect delays follow exponential backoff formula, never exceed 30s
-- [ ] 7.16 Write unit tests: duplicate event ID processed only once (same cache state)
+- [x] 7.15 Write unit tests: reconnect delays follow exponential backoff formula, never exceed 30s
+- [x] 7.16 Write unit tests: duplicate event ID processed only once (same cache state)
   - `// Feature: readmission-prevention-dashboard, Property 14: WebSocket Event Idempotence`
-- [ ] 7.17 Write unit tests: "Connection lost — reconnecting…" banner shown while disconnected; hidden on reconnect
+- [x] 7.17 Write unit tests: "Connection lost — reconnecting…" banner shown while disconnected; hidden on reconnect
 
 ---
 
