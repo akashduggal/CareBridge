@@ -120,7 +120,7 @@ const happyPathCall: Call = {
 const happyPathStats: DashboardStats = {
   todayDischarges: 4,
   pendingCalls: 2,
-  activeEscalations: 0,
+  activeEscalations: 1,
   tierDistribution: { tier1: 3, tier2: 1, tier3: 0 },
   dailyVolume: buildDailyVolume([3, 5, 4, 6, 3, 5, 4]),
   completedToday: 4,
@@ -365,6 +365,47 @@ export interface ScenarioData {
   discharges: ApiResponse<Discharge[]>
   /** All escalations for the escalation page */
   escalations: ApiResponse<Escalation[]>
+  /** Discharge history for the primary patient (PatientDetailPage) */
+  patientDischarges: ApiResponse<Discharge[]>
+  /** Calls for the primary discharge (DischargeQueuePage drawer) */
+  dischargeCalls: ApiResponse<Call[]>
+}
+
+// ─── Escalation entries for non-emergency scenarios ──────────────────────────
+
+/**
+ * Happy Path CHF — Tier 1, low confidence (0.48).
+ * Confidence below 0.6 routes this to the Human Review section so clinical
+ * staff can verify the low-risk assessment before closing the case.
+ */
+const happyPathEscalation: Escalation = {
+  id: 'demo-escalation-chf-001',
+  dischargeId: 'demo-discharge-chf-001',
+  patientName: 'Margaret Thompson',
+  diagnosisGroup: 'CHF',
+  dischargeDateTime: isoDateTime(-1, 8, 30),
+  riskScore: 2,
+  riskTier: 1,
+  confidence: 0.48,
+  callId: 'demo-call-chf-001',
+  createdAt: isoDateTime(0, 9, 5),
+}
+
+/**
+ * Medium Risk COPD — Tier 2, confidence 0.78.
+ * Routes to the Tier 2 Callback Queue for nurse follow-up.
+ */
+const mediumRiskEscalation: Escalation = {
+  id: 'demo-escalation-copd-001',
+  dischargeId: 'demo-discharge-copd-001',
+  patientName: 'Robert Nguyen',
+  diagnosisGroup: 'COPD',
+  dischargeDateTime: isoDateTime(-2, 14, 0),
+  riskScore: 5,
+  riskTier: 2,
+  confidence: 0.78,
+  callId: 'demo-call-copd-001',
+  createdAt: isoDateTime(0, 10, 20),
 }
 
 // ─── Scenario Registry ────────────────────────────────────────────────────────
@@ -374,7 +415,7 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
     patient: happyPathPatient,
     discharge: happyPathDischarge,
     call: happyPathCall,
-    escalation: undefined,
+    escalation: happyPathEscalation,
     stats: happyPathStats,
     patients: {
       data: [happyPathPatient],
@@ -385,8 +426,16 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       meta: { page: 1, limit: 25, total: 1 },
     },
     escalations: {
-      data: [],
-      meta: { page: 1, limit: 25, total: 0 },
+      data: [happyPathEscalation],
+      meta: { page: 1, limit: 25, total: 1 },
+    },
+    patientDischarges: {
+      data: [happyPathDischarge],
+      meta: { page: 1, limit: 25, total: 1 },
+    },
+    dischargeCalls: {
+      data: [happyPathCall],
+      meta: { page: 1, limit: 25, total: 1 },
     },
   },
 
@@ -394,7 +443,7 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
     patient: mediumRiskPatient,
     discharge: mediumRiskDischarge,
     call: mediumRiskCall,
-    escalation: undefined,
+    escalation: mediumRiskEscalation,
     stats: mediumRiskStats,
     patients: {
       data: [mediumRiskPatient],
@@ -405,8 +454,16 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       meta: { page: 1, limit: 25, total: 1 },
     },
     escalations: {
-      data: [],
-      meta: { page: 1, limit: 25, total: 0 },
+      data: [mediumRiskEscalation],
+      meta: { page: 1, limit: 25, total: 1 },
+    },
+    patientDischarges: {
+      data: [mediumRiskDischarge],
+      meta: { page: 1, limit: 25, total: 1 },
+    },
+    dischargeCalls: {
+      data: [mediumRiskCall],
+      meta: { page: 1, limit: 25, total: 1 },
     },
   },
 
@@ -426,6 +483,14 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
     },
     escalations: {
       data: [emergencyEscalation],
+      meta: { page: 1, limit: 25, total: 1 },
+    },
+    patientDischarges: {
+      data: [emergencyDischarge],
+      meta: { page: 1, limit: 25, total: 1 },
+    },
+    dischargeCalls: {
+      data: [emergencyCall],
       meta: { page: 1, limit: 25, total: 1 },
     },
   },

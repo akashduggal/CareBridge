@@ -90,7 +90,7 @@ export function DemoPanel({ onScenarioActivate }: DemoPanelProps) {
       queryClient.setQueryData(queryKeys.dischargeCalls(data.discharge.id), callsResponse)
 
       if (data.call.transcript) {
-        queryClient.setQueryData(queryKeys.calls(data.call.id), data.call)
+        queryClient.setQueryData(queryKeys.calls(data.call.id), data.call.transcript)
       }
 
       // Fire scenario events through the mock emitter so the WebSocketProvider

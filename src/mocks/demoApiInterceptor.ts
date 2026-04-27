@@ -76,6 +76,26 @@ function resolveMockResponse(url: string, method: string, scenarioData: Scenario
     return null
   }
 
+  // GET /patients/:id/discharges  (patient discharge history)
+  const patientDischargesMatch = pathname.match(/^(?:api\/)?patients\/([^/]+)\/discharges$/)
+  if (method === 'GET' && patientDischargesMatch) {
+    const patientId = patientDischargesMatch[1]
+    if (patientId === scenarioData.patient.id) {
+      return scenarioData.patientDischarges
+    }
+    return null
+  }
+
+  // GET /discharges/:id/calls  (calls for a discharge, shown in drawer)
+  const dischargeCallsMatch = pathname.match(/^(?:api\/)?discharges\/([^/]+)\/calls$/)
+  if (method === 'GET' && dischargeCallsMatch) {
+    const dischargeId = dischargeCallsMatch[1]
+    if (dischargeId === scenarioData.discharge.id) {
+      return scenarioData.dischargeCalls
+    }
+    return null
+  }
+
   // POST /patients  (create patient — return the scenario patient)
   if (method === 'POST' && /^(api\/)?patients$/.test(pathname)) {
     return scenarioData.patient
