@@ -35,4 +35,7 @@ export const queryKeys = {
 
   // Discharge history for a specific patient
   patientDischarges: (patientId: string) => ['patients', patientId, 'discharges'] as const,
+
+  // Current user profile / preferences
+  userProfile: () => ['users', 'me', 'preferences'] as const,
 } as const

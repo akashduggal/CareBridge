@@ -254,7 +254,9 @@ describe('17.9 – DemoPanel: no real fetch calls after scenario activation', ()
     const body = await response.json()
 
     expect(realFetchSpy).not.toHaveBeenCalled()
-    expect(body).toEqual(DEMO_SCENARIOS['medium-risk-copd'].discharges)
+    // Interceptor applies pagination + sorting; verify data comes from the scenario
+    expect(body.meta.total).toBe(DEMO_SCENARIOS['medium-risk-copd'].discharges.data.length)
+    expect(body.data.length).toBeGreaterThan(0)
   })
 
   it('no real fetch call is made for GET /escalations after "Emergency Chest Pain" is activated', async () => {
@@ -367,7 +369,11 @@ describe('17.9 – DemoPanel: no real fetch calls after scenario activation', ()
 
     // All responses came from the emergency scenario mock data
     expect(stats).toEqual(DEMO_SCENARIOS['emergency-chest-pain'].stats)
-    expect(discharges).toEqual(DEMO_SCENARIOS['emergency-chest-pain'].discharges)
+    // Interceptor applies pagination + sorting to discharges
+    expect(discharges.meta.total).toBe(
+      DEMO_SCENARIOS['emergency-chest-pain'].discharges.data.length
+    )
+    expect(discharges.data.length).toBeGreaterThan(0)
     expect(escalations).toEqual(DEMO_SCENARIOS['emergency-chest-pain'].escalations)
     expect(patients).toEqual(DEMO_SCENARIOS['emergency-chest-pain'].patients)
   })

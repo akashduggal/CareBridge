@@ -885,8 +885,8 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       meta: { page: 1, limit: 25, total: queueDischarges.length },
     },
     escalations: {
-      data: [happyPathEscalation],
-      meta: { page: 1, limit: 25, total: 1 },
+      data: [],
+      meta: { page: 1, limit: 25, total: 0 },
     },
     patientDischarges: {
       data: [happyPathDischarge],
@@ -914,8 +914,8 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       meta: { page: 1, limit: 25, total: queueDischarges.length },
     },
     escalations: {
-      data: [mediumRiskEscalation],
-      meta: { page: 1, limit: 25, total: 1 },
+      data: [],
+      meta: { page: 1, limit: 25, total: 0 },
     },
     patientDischarges: {
       data: [mediumRiskDischarge],

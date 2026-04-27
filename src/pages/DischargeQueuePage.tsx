@@ -168,7 +168,8 @@ export function DischargeQueuePage() {
     if (sortBy !== col) return <span className="ml-1 text-gray-300">↕</span>
     return <span className="ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
-
+  console.log("Discharges ::", discharges)
+  console.log("Filters :: ", filters)
   return (
     <div className="space-y-4" onKeyDown={handleKeyDown}>
       <h1 className="text-xl font-semibold text-gray-900">Discharge Queue</h1>

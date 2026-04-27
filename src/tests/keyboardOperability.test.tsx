@@ -493,10 +493,13 @@ describe('18.9 – DischargeQueue filter controls are keyboard accessible', () =
 
     renderDischargeQueuePage()
 
-    const diagSelect = screen.getByRole('listbox', { name: /filter by diagnosis group/i })
-    expect(diagSelect.tagName).toBe('SELECT')
-    // Selects are natively keyboard focusable — verify it has an accessible label
-    expect(diagSelect).toHaveAccessibleName()
+    const diagGroup = screen.getByRole('group', { name: /filter by diagnosis group/i })
+    const diagButtons = within(diagGroup).getAllByRole('button')
+    // Should have one button per diagnosis group
+    expect(diagButtons.length).toBe(6)
+    diagButtons.forEach((btn) => {
+      expect(btn.tagName).toBe('BUTTON')
+    })
   })
 
   it('Call Outcome select has a label and is keyboard focusable', async () => {
@@ -504,9 +507,13 @@ describe('18.9 – DischargeQueue filter controls are keyboard accessible', () =
 
     renderDischargeQueuePage()
 
-    const outcomeSelect = screen.getByRole('listbox', { name: /filter by call outcome/i })
-    expect(outcomeSelect.tagName).toBe('SELECT')
-    expect(outcomeSelect).toHaveAccessibleName()
+    const outcomeGroup = screen.getByRole('group', { name: /filter by call outcome/i })
+    const outcomeButtons = within(outcomeGroup).getAllByRole('button')
+    // Should have one button per call outcome
+    expect(outcomeButtons.length).toBe(5)
+    outcomeButtons.forEach((btn) => {
+      expect(btn.tagName).toBe('BUTTON')
+    })
   })
 
   it('Risk Tier filter buttons are keyboard accessible (tabIndex, focus ring)', async () => {
@@ -549,8 +556,11 @@ describe('18.9 – DischargeQueue filter controls are keyboard accessible', () =
 
     renderDischargeQueuePage()
 
-    const diagSelect = screen.getByRole('listbox', { name: /filter by diagnosis group/i })
-    expect(diagSelect.className).toContain('focus-visible:ring-2')
+    const diagGroup = screen.getByRole('group', { name: /filter by diagnosis group/i })
+    const diagButtons = within(diagGroup).getAllByRole('button')
+    diagButtons.forEach((btn) => {
+      expect(btn.className).toContain('focus-visible:ring-2')
+    })
   })
 })
 

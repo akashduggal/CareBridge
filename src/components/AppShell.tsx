@@ -4,6 +4,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useDemoMode } from '@/hooks/useDemoMode'
 import { DemoPanel } from '@/components/DemoPanel'
+import { ProfileAvatar } from '@/components/ProfileAvatar'
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -45,7 +46,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-  const { signOut } = useAuth()
+  const { signOut, user } = useAuth()
   const { reconnecting, connectionAttempts } = useWebSocket()
   const [menuOpen, setMenuOpen] = useState(false)
   const location = useLocation()
@@ -110,6 +111,23 @@ export function AppShell({ children }: AppShellProps) {
               Demo Mode
             </span>
           )}
+          <NavLink
+            to={isDemoMode ? '/profile?demo=true' : '/profile'}
+            className={({ isActive }) =>
+              [
+                'rounded-md p-1 transition-colors',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1',
+                isActive ? 'bg-blue-50' : 'hover:bg-gray-100',
+              ].join(' ')
+            }
+            aria-label="My profile"
+          >
+            <ProfileAvatar
+              photoURL={user?.photoURL ?? null}
+              displayName={user?.displayName ?? null}
+              size="sm"
+            />
+          </NavLink>
           <button
             type="button"
             onClick={() => void signOut()}
@@ -147,13 +165,49 @@ export function AppShell({ children }: AppShellProps) {
           </div>
 
           <div className="mt-6 border-t border-gray-200 pt-4">
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="w-full rounded-md px-3 py-2 text-left text-sm font-medium text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-            >
-              Sign Out
-            </button>
+            <div className="flex items-center gap-2">
+              <NavLink
+                to={isDemoMode ? '/profile?demo=true' : '/profile'}
+                className={({ isActive }) =>
+                  [
+                    'flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                    'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1',
+                    isActive
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900',
+                  ].join(' ')
+                }
+              >
+                <ProfileAvatar
+                  photoURL={user?.photoURL ?? null}
+                  displayName={user?.displayName ?? null}
+                  size="sm"
+                />
+                <span className="truncate">{user?.displayName ?? 'My Profile'}</span>
+              </NavLink>
+              <button
+                type="button"
+                onClick={() => void signOut()}
+                aria-label="Sign out"
+                className="rounded-md p-2 text-gray-600 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1"
+              >
+                {/* Sign-out icon */}
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
         </aside>
 

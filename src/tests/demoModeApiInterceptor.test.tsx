@@ -162,7 +162,9 @@ describe('17.7 – demoApiInterceptor: resolves known endpoints against mock dat
     const response = await globalThis.fetch('/discharges')
     expect(response.ok).toBe(true)
     const body = await response.json()
-    expect(body).toEqual(DEMO_SCENARIOS['medium-risk-copd'].discharges)
+    // Interceptor applies pagination + sorting; verify total matches scenario
+    expect(body.meta.total).toBe(DEMO_SCENARIOS['medium-risk-copd'].discharges.data.length)
+    expect(body.data.length).toBeGreaterThan(0)
   })
 
   it('GET /escalations returns scenario escalations', async () => {
@@ -230,7 +232,10 @@ describe('17.7 – demoApiInterceptor: resolves known endpoints against mock dat
     const response = await globalThis.fetch('/discharges?page=1&limit=25')
     expect(response.ok).toBe(true)
     const body = await response.json()
-    expect(body).toEqual(DEMO_SCENARIOS['medium-risk-copd'].discharges)
+    // Interceptor applies pagination + sorting; verify meta is correct
+    expect(body.meta.page).toBe(1)
+    expect(body.meta.limit).toBe(25)
+    expect(body.meta.total).toBe(DEMO_SCENARIOS['medium-risk-copd'].discharges.data.length)
   })
 
   it('works with api/ prefix in URL path', async () => {

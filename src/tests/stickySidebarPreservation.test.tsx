@@ -308,8 +308,9 @@ describe('Property 2e: Sidebar contains CareBridge text, navigation, and Sign Ou
       const links = nav!.querySelectorAll('a')
       expect(links.length).toBeGreaterThan(0)
 
-      // Sign Out button
-      expect(within(sidebarEl).getByText('Sign Out')).toBeTruthy()
+      // Sign Out button (icon-only button with aria-label)
+      const signOutBtn = within(sidebarEl).getByRole('button', { name: /sign out/i })
+      expect(signOutBtn).toBeTruthy()
 
       unmount()
     }

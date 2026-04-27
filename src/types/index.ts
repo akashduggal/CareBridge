@@ -181,6 +181,12 @@ export interface ApiError {
   };
 }
 
+// ─── User Preferences ────────────────────────────────────────────────────────
+
+export interface UserPreferences {
+  escalationNotifications: boolean;
+}
+
 // ─── Context Value Interfaces ─────────────────────────────────────────────────
 
 export interface AuthContextValue {
