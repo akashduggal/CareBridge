@@ -130,9 +130,9 @@ export function AppShell({ children }: AppShellProps) {
         </div>
       )}
 
-      <div className="flex">
+      <div className="flex desktop:h-screen">
         {/* ── Persistent sidebar (desktop ≥1280px) ── */}
-        <aside className="hidden desktop:flex desktop:w-56 desktop:flex-shrink-0 desktop:flex-col desktop:border-r desktop:border-gray-200 desktop:bg-white desktop:px-4 desktop:py-6">
+        <aside className="hidden desktop:flex desktop:w-56 desktop:flex-shrink-0 desktop:flex-col desktop:border-r desktop:border-gray-200 desktop:bg-white desktop:px-4 desktop:py-6 desktop:sticky desktop:top-0 desktop:h-screen desktop:overflow-y-auto">
           <div className="mb-6 flex items-center justify-between">
             <span className="text-base font-semibold text-gray-900">CareBridge</span>
             {isDemoMode && (

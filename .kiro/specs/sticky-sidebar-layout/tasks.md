@@ -1,0 +1,82 @@
+# Implementation Plan
+
+- [x] 1. Write bug condition exploration test
+  - **Property 1: Bug Condition** - Sidebar Missing Sticky Positioning and Viewport Height at Desktop
+  - **CRITICAL**: This test MUST FAIL on unfixed code - failure confirms the bug exists
+  - **DO NOT attempt to fix the test or the code when it fails**
+  - **NOTE**: This test encodes the expected behavior - it will validate the fix when it passes after implementation
+  - **GOAL**: Surface counterexamples that demonstrate the bug exists
+  - **Scoped PBT Approach**: Scope the property to the concrete failing case — render AppShell and assert the sidebar `aside` has `desktop:sticky`, `desktop:top-0`, and `desktop:h-screen` classes, and the outer flex container has `desktop:h-screen`
+  - Create test file `src/tests/stickySidebarBugCondition.test.tsx` using Vitest and `@testing-library/react`
+  - Use `@fast-check/vitest` and `fast-check` for property-based generation of component states (demo mode on/off, connection states)
+  - Mock `useAuth`, `useWebSocket`, and Firebase modules following the pattern in `src/tests/appShell.test.tsx`
+  - Property: _For all_ component states (demo mode ∈ {true, false}, reconnecting ∈ {true, false}, connectionFailed ∈ {true, false}), rendering AppShell at desktop SHALL produce a sidebar `aside` with classes containing `desktop:sticky`, `desktop:top-0`, and `desktop:h-screen`, and the parent flex container SHALL contain `desktop:h-screen`
+  - Bug Condition from design: `isBugCondition(input)` returns true when `viewportWidth >= 1280 AND NOT sidebarClasses.includes('sticky') AND NOT sidebarClasses.includes('h-screen') AND NOT outerContainerClasses.includes('h-screen')`
+  - Expected Behavior from design: sidebar has `desktop:sticky`, `desktop:top-0`, `desktop:h-screen`; outer flex container has `desktop:h-screen`
+  - Run test on UNFIXED code
+  - **EXPECTED OUTCOME**: Test FAILS (this is correct - it proves the bug exists because the sidebar lacks sticky/h-screen classes)
+  - Document counterexamples found (e.g., "sidebar aside element lacks desktop:sticky, desktop:top-0, desktop:h-screen classes")
+  - Mark task complete when test is written, run, and failure is documented
+  - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3_
+
+- [x] 2. Write preservation property tests (BEFORE implementing fix)
+  - **Property 2: Preservation** - Mobile/Tablet Layout and Sidebar Content Unchanged
+  - **IMPORTANT**: Follow observation-first methodology
+  - Create test file `src/tests/stickySidebarPreservation.test.tsx` using Vitest and `@testing-library/react`
+  - Use `@fast-check/vitest` and `fast-check` for property-based generation of component states
+  - Mock `useAuth`, `useWebSocket`, and Firebase modules following the pattern in `src/tests/appShell.test.tsx`
+  - **Observe on UNFIXED code first:**
+    - Observe: mobile header has `desktop:hidden` class across all component states
+    - Observe: sidebar `aside` has `hidden` base class (CSS-hidden below 1280px) across all component states
+    - Observe: hamburger menu button is present with correct `aria-expanded` and `aria-controls` attributes
+    - Observe: connection banners render with `sticky top-0 z-50` classes when reconnecting or connection failed
+    - Observe: sidebar contains "CareBridge" branding, navigation links (Dashboard, Discharge Queue, Escalations, Patients), and Sign Out button
+    - Observe: Demo badge appears in sidebar when `?demo=true` is in the URL
+  - **Write property-based tests capturing observed behavior:**
+    - Property 2a: _For all_ component states (demo mode, connection states), the mobile header SHALL have `desktop:hidden` class
+    - Property 2b: _For all_ component states, the sidebar `aside` SHALL have `hidden` as a base class and `desktop:flex` as a responsive class
+    - Property 2c: _For all_ connection states where `reconnecting=true`, the reconnecting banner SHALL render with `sticky`, `top-0`, `z-50` classes
+    - Property 2d: _For all_ connection states where `reconnecting=false AND connectionAttempts >= 5`, the connection-failed banner SHALL render with `sticky`, `top-0`, `z-50` classes
+    - Property 2e: _For all_ component states, the sidebar SHALL contain "CareBridge" text, a navigation element with links, and a Sign Out button
+    - Property 2f: _For all_ component states where demo mode is active, the sidebar SHALL contain a "Demo" badge
+  - Run tests on UNFIXED code
+  - **EXPECTED OUTCOME**: Tests PASS (this confirms baseline behavior to preserve)
+  - Mark task complete when tests are written, run, and passing on unfixed code
+  - _Requirements: 3.1, 3.2, 3.3, 3.4_
+
+- [x] 3. Fix for sticky sidebar layout at desktop viewport
+
+  - [x] 3.1 Implement the CSS class fix in AppShell component
+    - In `src/components/AppShell.tsx`, add `desktop:h-screen` to the outer flex container `<div className="flex">` → `<div className="flex desktop:h-screen">`
+    - Add `desktop:sticky desktop:top-0 desktop:h-screen` to the sidebar `aside` element's className
+    - Add `desktop:overflow-y-auto` to the sidebar `aside` element's className as a defensive measure for future content growth
+    - No changes to the `<main>` element (already has `overflow-auto`)
+    - No changes to mobile/tablet layout (all additions use `desktop:` prefix, only applies at ≥1280px)
+    - _Bug_Condition: isBugCondition(input) where viewportWidth >= 1280 AND sidebar lacks sticky/h-screen AND outer container lacks h-screen_
+    - _Expected_Behavior: sidebar has desktop:sticky, desktop:top-0, desktop:h-screen; outer flex container has desktop:h-screen_
+    - _Preservation: Mobile/tablet header retains desktop:hidden; sidebar retains hidden base class; connection banners, branding, Demo badge, Sign Out unchanged_
+    - _Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 3.4_
+
+  - [x] 3.2 Verify bug condition exploration test now passes
+    - **Property 1: Expected Behavior** - Sidebar Has Sticky Positioning and Viewport Height at Desktop
+    - **IMPORTANT**: Re-run the SAME test from task 1 - do NOT write a new test
+    - The test from task 1 encodes the expected behavior (sidebar has `desktop:sticky`, `desktop:top-0`, `desktop:h-screen`; flex container has `desktop:h-screen`)
+    - When this test passes, it confirms the expected behavior is satisfied
+    - Run bug condition exploration test from step 1: `npx vitest --run src/tests/stickySidebarBugCondition.test.tsx`
+    - **EXPECTED OUTCOME**: Test PASSES (confirms bug is fixed)
+    - _Requirements: 2.1, 2.2, 2.3_
+
+  - [x] 3.3 Verify preservation tests still pass
+    - **Property 2: Preservation** - Mobile/Tablet Layout and Sidebar Content Unchanged
+    - **IMPORTANT**: Re-run the SAME tests from task 2 - do NOT write new tests
+    - Run preservation property tests from step 2: `npx vitest --run src/tests/stickySidebarPreservation.test.tsx`
+    - **EXPECTED OUTCOME**: Tests PASS (confirms no regressions)
+    - Confirm all preservation tests still pass after fix (no regressions to mobile/tablet layout, connection banners, branding, or navigation)
+
+- [x] 4. Checkpoint - Ensure all tests pass
+  - Run full test suite: `npx vitest --run`
+  - Ensure all existing tests in `src/tests/appShell.test.tsx` still pass (no regressions to existing responsive layout tests)
+  - Ensure bug condition exploration test passes (bug is fixed)
+  - Ensure preservation property tests pass (no regressions)
+  - Ensure no TypeScript compilation errors: `npx tsc --noEmit`
+  - Ask the user if questions arise
