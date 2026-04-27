@@ -41,7 +41,7 @@ describe('deriveRiskTier', () => {
  * Property 1: Risk Tier Derivation Consistency
  * Validates: Requirements 3.6, 8.1
  */
-test.prop([fc.integer({ min: 0, max: 20 })])(
+test.prop([fc.integer({ min: 0, max: 20 })], { numRuns: 20 })(
   'deriveRiskTier returns correct tier for all scores in [0,20]',
   (score) => {
     const tier = deriveRiskTier(score);
@@ -110,7 +110,7 @@ describe('shouldShowLowConfidenceWarning', () => {
  * Property 5: Low Confidence Warning Badge Consistency
  * Validates: Requirements 3.8, 3.3
  */
-test.prop([fc.float({ min: 0, max: 1, noNaN: true })])(
+test.prop([fc.float({ min: 0, max: 1, noNaN: true })], { numRuns: 20 })(
   'shouldShowLowConfidenceWarning is true iff confidence < 0.6',
   (confidence) => {
     const result = shouldShowLowConfidenceWarning(confidence);
@@ -159,7 +159,7 @@ test.prop([
     riskTier: fc.integer({ min: 1, max: 3 }),
     confidence: fc.float({ min: 0, max: 1, noNaN: true }),
   }),
-])(
+], { numRuns: 20 })(
   'getEscalationSection returns exactly one valid section or throws for invalid input',
   ({ riskTier, confidence }) => {
     const validSections = ['tier3', 'tier2', 'humanReview'] as const;

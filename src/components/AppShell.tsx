@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { NavLink, useLocation, useSearchParams } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWebSocket } from '@/contexts/WebSocketContext'
+import { DemoPanel } from '@/components/DemoPanel'
 
 const NAV_LINKS = [
   { to: '/dashboard', label: 'Dashboard' },
@@ -165,6 +166,9 @@ export function AppShell({ children }: AppShellProps) {
           {children}
         </main>
       </div>
+
+      {/* ── Demo Panel (floating, bottom-right) ── */}
+      <DemoPanel />
     </div>
   )
 }

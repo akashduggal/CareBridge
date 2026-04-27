@@ -9,3 +9,12 @@ export function validateICD10(code: string): boolean {
   const pattern = /^[A-Z][0-9]{2}(\.[0-9A-Z]{1,4})?$/;
   return pattern.test(code);
 }
+
+/**
+ * Validates that a datetime is not in the future.
+ * Returns true if the datetime is in the past or present, false if in the future.
+ */
+export function validateFutureDatetime(datetime: Date): boolean {
+  const now = new Date();
+  return datetime <= now;
+}

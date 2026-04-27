@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { calculateReconnectDelay } from '@/utils/websocketUtils'
 import { queryKeys } from '@/lib/queryKeys'
 import { auth } from '@/lib/firebase'
+import { mockEventEmitter } from '@/mocks/mockEventEmitter'
 import type {
   ApiResponse,
   CallCompletedEvent,
@@ -27,6 +28,12 @@ import type {
 
 const MAX_RECONNECT_ATTEMPTS = 5
 const WS_BASE_URL = import.meta.env.VITE_WS_URL ?? 'ws://localhost:3000'
+
+/** Returns true when the current URL contains `?demo=true`. */
+function isDemoMode(): boolean {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('demo') === 'true'
+}
 
 // ─── Type guards ──────────────────────────────────────────────────────────────
 
@@ -69,6 +76,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const [reconnecting, setReconnecting] = useState(false)
   const [connectionAttempts, setConnectionAttempts] = useState(0)
   const [lastEventId, setLastEventId] = useState<string | null>(null)
+  const [lastDischargeCreatedId, setLastDischargeCreatedId] = useState<string | null>(null)
 
   // In-memory deduplication cache — cleared on sign-out
   const processedEventIds = useRef<Set<string>>(new Set())
@@ -146,6 +154,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
             data: [event.discharge, ...response.data],
           }
         })
+        // Notify page about the new discharge (for non-page-1 banner)
+        setLastDischargeCreatedId(event.id)
         // Increment today's discharges count in dashboard stats cache
         queryClient.setQueryData(queryKeys.dashboard(), (old: unknown) => {
           if (!old) return old
@@ -298,6 +308,18 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
+    // Demo Mode (task 17.6): skip the real WebSocket and subscribe to the
+    // local mock emitter instead. No outbound network connection is made.
+    if (isDemoMode()) {
+      setConnected(true)
+      setReconnecting(false)
+      mockEventEmitter.on(handleEvent)
+      return () => {
+        mockEventEmitter.off(handleEvent)
+        setConnected(false)
+      }
+    }
+
     // Auth resolved with valid user — connect (task 7.2)
     void connect()
 
@@ -305,10 +327,10 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       clearReconnectTimer()
       closeSocket()
     }
-  }, [user, loading, connect, clearReconnectTimer, closeSocket])
+  }, [user, loading, connect, clearReconnectTimer, closeSocket, handleEvent])
 
   return (
-    <WebSocketContext.Provider value={{ connected, reconnecting, connectionAttempts, lastEventId }}>
+    <WebSocketContext.Provider value={{ connected, reconnecting, connectionAttempts, lastEventId, lastDischargeCreatedId }}>
       {children}
     </WebSocketContext.Provider>
   )
