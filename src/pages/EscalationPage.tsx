@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { apiClient } from '@/lib/apiClient'
 import { queryKeys } from '@/lib/queryKeys'
+import { useDemoMode } from '@/hooks/useDemoMode'
 import { getEscalationSection, shouldShowLowConfidenceWarning } from '@/utils/riskUtils'
 import { formatDateTime } from '@/utils/formatUtils'
 import { DiagnosisGroupBadge } from '@/components/DiagnosisGroupBadge'
@@ -26,7 +27,7 @@ function SectionSkeleton() {
 
 // ─── Tier 3 urgent alert banner ───────────────────────────────────────────────
 
-function Tier3AlertBanner({ escalation }: { escalation: Escalation }) {
+function Tier3AlertBanner({ escalation, callHref }: { escalation: Escalation; callHref: string }) {
   const showLowConf = shouldShowLowConfidenceWarning(escalation.confidence)
   return (
     <div
@@ -53,7 +54,7 @@ function Tier3AlertBanner({ escalation }: { escalation: Escalation }) {
         </p>
       </div>
       <Link
-        to={`/calls/${escalation.callId}`}
+        to={callHref}
         className="flex-shrink-0 rounded-md bg-red-100 px-3 py-1.5 text-sm font-medium text-red-800 hover:bg-red-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-1"
       >
         View Transcript
@@ -85,7 +86,7 @@ function Tier2CallbackCard({ escalation }: { escalation: Escalation }) {
 
 // ─── Human review card ────────────────────────────────────────────────────────
 
-function HumanReviewCard({ escalation }: { escalation: Escalation }) {
+function HumanReviewCard({ escalation, callHref }: { escalation: Escalation; callHref: string }) {
   return (
     <div className="flex flex-col gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
       <div className="space-y-1">
@@ -101,7 +102,7 @@ function HumanReviewCard({ escalation }: { escalation: Escalation }) {
         </p>
       </div>
       <Link
-        to={`/calls/${escalation.callId}`}
+        to={callHref}
         className="flex-shrink-0 rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1"
       >
         View Transcript
@@ -114,6 +115,7 @@ function HumanReviewCard({ escalation }: { escalation: Escalation }) {
 
 export function EscalationPage() {
   const { role } = useAuth()
+  const isDemoMode = useDemoMode()
   const isPhysician = role === 'physician'
 
   const { data, isLoading, isError, refetch } = useQuery<ApiResponse<Escalation[]>>({
@@ -122,6 +124,10 @@ export function EscalationPage() {
   })
 
   const escalations = data?.data ?? []
+
+  function callHref(callId: string) {
+    return isDemoMode ? `/calls/${callId}?demo=true` : `/calls/${callId}`
+  }
 
   // Partition escalations into sections using getEscalationSection routing logic.
   // Records that don't match any section (e.g. Tier 1 with confidence ≥ 0.6) are
@@ -182,7 +188,7 @@ export function EscalationPage() {
                 className="space-y-3"
               >
                 {tier3.map((esc) => (
-                  <Tier3AlertBanner key={esc.id} escalation={esc} />
+                  <Tier3AlertBanner key={esc.id} escalation={esc} callHref={callHref(esc.callId)} />
                 ))}
               </div>
             </section>
@@ -210,7 +216,7 @@ export function EscalationPage() {
               </h2>
               <div className="space-y-3">
                 {humanReview.map((esc) => (
-                  <HumanReviewCard key={esc.id} escalation={esc} />
+                  <HumanReviewCard key={esc.id} escalation={esc} callHref={callHref(esc.callId)} />
                 ))}
               </div>
             </section>

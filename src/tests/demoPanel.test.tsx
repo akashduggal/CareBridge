@@ -163,12 +163,10 @@ describe('17.1 – Active scenario button is highlighted after click', () => {
     mockAuth(fakeUser)
   })
 
-  it('no scenario is active initially (no aria-pressed=true)', () => {
+  it('happy-path-chf is auto-activated on mount (aria-pressed=true)', () => {
     renderDemoPanel('/dashboard?demo=true')
-    const buttons = screen.getAllByRole('button', { name: /happy path|medium risk|emergency/i })
-    buttons.forEach((btn) => {
-      expect(btn).toHaveAttribute('aria-pressed', 'false')
-    })
+    const chfButton = screen.getByTestId('demo-scenario-happy-path-chf')
+    expect(chfButton).toHaveAttribute('aria-pressed', 'true')
   })
 
   it('clicking "Happy Path CHF" sets it as active (aria-pressed=true)', async () => {
@@ -243,9 +241,11 @@ describe('17.1 – Active scenario button is highlighted after click', () => {
       </QueryClientProvider>
     )
 
+    // Auto-activate fires once on mount (happy-path-chf), then manual click fires again
     await user.click(screen.getByTestId('demo-scenario-emergency-chest-pain'))
-    expect(onActivate).toHaveBeenCalledOnce()
     expect(onActivate).toHaveBeenCalledWith('emergency-chest-pain')
+    // Last call should be the manual click
+    expect(onActivate.mock.calls.at(-1)).toEqual(['emergency-chest-pain'])
   })
 })
 

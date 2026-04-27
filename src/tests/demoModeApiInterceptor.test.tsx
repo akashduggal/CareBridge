@@ -348,9 +348,9 @@ describe('17.7 – DemoPanel: activates fetch interceptor on scenario click', ()
     globalThis.fetch = originalFetch
   })
 
-  it('interceptor is not active before any scenario is clicked', () => {
+  it('interceptor is active on mount (auto-activated with default scenario)', () => {
     renderDemoPanel()
-    expect(isDemoInterceptorActive()).toBe(false)
+    expect(isDemoInterceptorActive()).toBe(true)
   })
 
   it('interceptor is active after clicking "Happy Path CHF"', async () => {

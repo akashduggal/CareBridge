@@ -158,7 +158,8 @@ describe('17.9 – DemoPanel: fetch interceptor lifecycle', () => {
 
   it('interceptor is NOT active before any scenario button is clicked', () => {
     renderDemoPanel()
-    expect(isDemoInterceptorActive()).toBe(false)
+    // Auto-activate fires on mount — interceptor is active immediately
+    expect(isDemoInterceptorActive()).toBe(true)
   })
 
   it('interceptor becomes active after clicking "Happy Path CHF"', async () => {
@@ -628,16 +629,16 @@ describe('17.9 – DemoPanel: real fetch is restored after demo session ends', (
     expect(realFetchSpy).toHaveBeenCalledOnce()
   })
 
-  it('fetch is not intercepted before any scenario is activated', async () => {
+  it('fetch is intercepted immediately on mount (auto-activated)', async () => {
     globalThis.fetch = realFetchSpy
 
     renderDemoPanel()
 
-    // Panel is rendered but no scenario clicked yet — interceptor not active
-    expect(isDemoInterceptorActive()).toBe(false)
+    // Auto-activate fires on mount — interceptor is active immediately
+    expect(isDemoInterceptorActive()).toBe(true)
 
-    // A fetch call should go to the real fetch
+    // A fetch call should be intercepted, not hitting real fetch
     await globalThis.fetch('/dashboard/stats')
-    expect(realFetchSpy).toHaveBeenCalledOnce()
+    expect(realFetchSpy).not.toHaveBeenCalled()
   })
 })

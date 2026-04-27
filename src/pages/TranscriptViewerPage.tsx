@@ -2,6 +2,7 @@ import { useParams, Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/apiClient'
 import { queryKeys } from '@/lib/queryKeys'
+import { useDemoMode } from '@/hooks/useDemoMode'
 import { SkeletonCard } from '@/components/SkeletonCard'
 import { ErrorBanner } from '@/components/ErrorBanner'
 import { FlaggedPhraseHighlight } from '@/components/FlaggedPhraseHighlight'
@@ -151,6 +152,7 @@ function groupFlagsByCategory(phrases: FlaggedPhrase[]): [string, FlaggedPhrase[
 
 export function TranscriptViewerPage() {
   const { id } = useParams<{ id: string }>()
+  const isDemoMode = useDemoMode()
 
   const { data, isLoading, isError, error, refetch } = useQuery<CallTranscript>({
     queryKey: queryKeys.calls(id ?? ''),
@@ -167,7 +169,7 @@ export function TranscriptViewerPage() {
           The call transcript you are looking for does not exist or has been removed.
         </p>
         <Link
-          to="/discharges"
+          to={isDemoMode ? '/discharges?demo=true' : '/discharges'}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         >
           Back to Discharge Queue

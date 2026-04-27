@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { NavLink, useLocation, useSearchParams } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWebSocket } from '@/contexts/WebSocketContext'
+import { useDemoMode } from '@/hooks/useDemoMode'
 import { DemoPanel } from '@/components/DemoPanel'
 
 const NAV_LINKS = [
@@ -11,14 +12,14 @@ const NAV_LINKS = [
   { to: '/patients', label: 'Patients' },
 ]
 
-function NavItems({ onNavigate }: { onNavigate?: () => void }) {
+function NavItems({ onNavigate, demoMode }: { onNavigate?: () => void; demoMode: boolean }) {
   return (
     <nav aria-label="Main navigation">
       <ul className="flex flex-col gap-1">
         {NAV_LINKS.map(({ to, label }) => (
           <li key={to}>
             <NavLink
-              to={to}
+              to={demoMode ? `${to}?demo=true` : to}
               onClick={onNavigate}
               className={({ isActive }) =>
                 [
@@ -47,10 +48,9 @@ export function AppShell({ children }: AppShellProps) {
   const { signOut } = useAuth()
   const { reconnecting, connectionAttempts } = useWebSocket()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [searchParams] = useSearchParams()
   const location = useLocation()
+  const isDemoMode = useDemoMode()
 
-  const isDemoMode = searchParams.get('demo') === 'true'
   const connectionFailed = !reconnecting && connectionAttempts >= 5
 
   return (
@@ -126,7 +126,7 @@ export function AppShell({ children }: AppShellProps) {
           id="mobile-nav"
           className="border-b border-gray-200 bg-white px-4 py-3 desktop:hidden"
         >
-          <NavItems onNavigate={() => setMenuOpen(false)} />
+          <NavItems onNavigate={() => setMenuOpen(false)} demoMode={isDemoMode} />
         </div>
       )}
 
@@ -143,7 +143,7 @@ export function AppShell({ children }: AppShellProps) {
           </div>
 
           <div className="flex-1">
-            <NavItems />
+            <NavItems demoMode={isDemoMode} />
           </div>
 
           <div className="mt-6 border-t border-gray-200 pt-4">

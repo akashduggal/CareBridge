@@ -5,6 +5,7 @@ import { apiClient } from '@/lib/apiClient'
 import { queryKeys } from '@/lib/queryKeys'
 import { formatDate } from '@/utils/formatUtils'
 import { useDebounce } from '@/hooks/useDebounce'
+import { useDemoMode } from '@/hooks/useDemoMode'
 import { SkeletonRow } from '@/components/SkeletonCard'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorBanner } from '@/components/ErrorBanner'
@@ -16,6 +17,7 @@ const DEBOUNCE_MS = 300
 
 export function PatientListPage() {
   const navigate = useNavigate()
+  const isDemoMode = useDemoMode()
   const [page, setPage] = useState(1)
   const [searchInput, setSearchInput] = useState('')
   const debouncedSearch = useDebounce(searchInput, DEBOUNCE_MS)
@@ -110,10 +112,18 @@ export function PatientListPage() {
               patients.map((patient) => (
                 <tr
                   key={patient.id}
-                  onClick={() => navigate(`/patients/${patient.id}`)}
+                  onClick={() => {
+                    const dest = isDemoMode
+                      ? `/patients/${patient.id}?demo=true`
+                      : `/patients/${patient.id}`
+                    navigate(dest)
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
-                      navigate(`/patients/${patient.id}`)
+                      const dest = isDemoMode
+                        ? `/patients/${patient.id}?demo=true`
+                        : `/patients/${patient.id}`
+                      navigate(dest)
                     }
                   }}
                   tabIndex={0}

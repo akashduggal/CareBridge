@@ -189,7 +189,7 @@ describe('17.10 – "Emergency Chest Pain" scenario produces Tier 3 escalation i
     await waitFor(() => {
       const tier3Section = screen.getByRole('region', { name: /tier 3 urgent alerts/i })
       const transcriptLink = within(tier3Section).getByRole('link', { name: /view transcript/i })
-      expect(transcriptLink).toHaveAttribute('href', `/calls/${expectedCallId}`)
+      expect(transcriptLink).toHaveAttribute('href', expect.stringContaining(`/calls/${expectedCallId}`))
     })
   })
 

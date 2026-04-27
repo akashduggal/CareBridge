@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { apiClient } from '@/lib/apiClient'
 import { queryKeys } from '@/lib/queryKeys'
 import { formatDate, formatDateTime } from '@/utils/formatUtils'
+import { useDemoMode } from '@/hooks/useDemoMode'
 import { SkeletonRow } from '@/components/SkeletonCard'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorBanner } from '@/components/ErrorBanner'
@@ -16,6 +17,7 @@ function is404(error: unknown): boolean {
 
 export function PatientDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const isDemoMode = useDemoMode()
 
   const {
     data: patientData,
@@ -49,7 +51,7 @@ export function PatientDetailPage() {
           The patient record you are looking for does not exist or has been removed.
         </p>
         <Link
-          to="/patients"
+          to={isDemoMode ? '/patients?demo=true' : '/patients'}
           className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2"
         >
           Back to Patient List
@@ -64,11 +66,11 @@ export function PatientDetailPage() {
   return (
     <div className="space-y-6">
       {/* Back link */}
-      <Link
-        to="/patients"
-        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1"
-        aria-label="Back to patient list"
-      >
+        <Link
+          to={isDemoMode ? '/patients?demo=true' : '/patients'}
+          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-1"
+          aria-label="Back to patient list"
+        >
         <svg
           className="h-4 w-4"
           fill="none"
