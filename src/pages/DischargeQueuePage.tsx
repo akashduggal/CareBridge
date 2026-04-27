@@ -206,31 +206,39 @@ export function DischargeQueuePage() {
 
       {/* ── Filters ── */}
       <div className="flex flex-wrap gap-3">
-        {/* Diagnosis Group multi-select */}
-        <div>
-          <label htmlFor="filter-diagnosis" className="sr-only">
-            Filter by Diagnosis Group
-          </label>
-          <select
-            id="filter-diagnosis"
-            multiple
-            value={filters.diagnosisGroup}
-            onChange={(e) => {
-              const selected = Array.from(e.target.selectedOptions).map(
-                (o) => o.value as DiagnosisGroup
-              )
-              setFilters((f) => ({ ...f, diagnosisGroup: selected }))
-              setPage(1)
-            }}
-            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-            aria-label="Filter by Diagnosis Group"
-          >
-            {DIAGNOSIS_GROUPS.map((g) => (
-              <option key={g} value={g}>
+        {/* Diagnosis Group segmented toggle */}
+        <div
+          role="group"
+          aria-label="Filter by Diagnosis Group"
+          className="flex flex-wrap rounded-md border border-gray-300 overflow-hidden"
+        >
+          {DIAGNOSIS_GROUPS.map((g) => {
+            const active = filters.diagnosisGroup.includes(g)
+            return (
+              <button
+                key={g}
+                type="button"
+                onClick={() => {
+                  setFilters((f) => ({
+                    ...f,
+                    diagnosisGroup: active
+                      ? f.diagnosisGroup.filter((x) => x !== g)
+                      : [...f.diagnosisGroup, g],
+                  }))
+                  setPage(1)
+                }}
+                aria-pressed={active}
+                className={[
+                  'px-3 py-1.5 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+                  active
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50',
+                ].join(' ')}
+              >
                 {g}
-              </option>
-            ))}
-          </select>
+              </button>
+            )
+          })}
         </div>
 
         {/* Risk Tier segmented button */}
@@ -260,31 +268,39 @@ export function DischargeQueuePage() {
           ))}
         </div>
 
-        {/* Call Outcome multi-select */}
-        <div>
-          <label htmlFor="filter-outcome" className="sr-only">
-            Filter by Call Outcome
-          </label>
-          <select
-            id="filter-outcome"
-            multiple
-            value={filters.callOutcome}
-            onChange={(e) => {
-              const selected = Array.from(e.target.selectedOptions).map(
-                (o) => o.value as CallOutcome
-              )
-              setFilters((f) => ({ ...f, callOutcome: selected }))
-              setPage(1)
-            }}
-            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-            aria-label="Filter by Call Outcome"
-          >
-            {CALL_OUTCOMES.map((o) => (
-              <option key={o} value={o}>
+        {/* Call Outcome segmented toggle */}
+        <div
+          role="group"
+          aria-label="Filter by Call Outcome"
+          className="flex flex-wrap rounded-md border border-gray-300 overflow-hidden"
+        >
+          {CALL_OUTCOMES.map((o) => {
+            const active = filters.callOutcome.includes(o)
+            return (
+              <button
+                key={o}
+                type="button"
+                onClick={() => {
+                  setFilters((f) => ({
+                    ...f,
+                    callOutcome: active
+                      ? f.callOutcome.filter((x) => x !== o)
+                      : [...f.callOutcome, o],
+                  }))
+                  setPage(1)
+                }}
+                aria-pressed={active}
+                className={[
+                  'px-3 py-1.5 text-sm font-medium capitalize focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+                  active
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50',
+                ].join(' ')}
+              >
                 {o.replace('_', ' ')}
-              </option>
-            ))}
-          </select>
+              </button>
+            )
+          })}
         </div>
       </div>
 
