@@ -6,6 +6,7 @@ export const queryKeys = {
   // Discharges list with optional filter/pagination params
   discharges: (params?: {
     page?: number
+    limit?: number
     diagnosisGroup?: string[]
     riskTier?: number[]
     callOutcome?: string[]
@@ -16,6 +17,9 @@ export const queryKeys = {
   // Single call transcript
   calls: (id: string) => ['calls', id, 'transcript'] as const,
 
+  // Calls for a specific discharge
+  dischargeCalls: (dischargeId: string) => ['discharges', dischargeId, 'calls'] as const,
+
   // Escalations list
   escalations: () => ['escalations'] as const,
 
@@ -25,4 +29,10 @@ export const queryKeys = {
     search?: string
     limit?: number
   }) => ['patients', params ?? {}] as const,
+
+  // Single patient detail
+  patient: (id: string) => ['patients', id] as const,
+
+  // Discharge history for a specific patient
+  patientDischarges: (patientId: string) => ['patients', patientId, 'discharges'] as const,
 } as const

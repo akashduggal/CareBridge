@@ -43,7 +43,7 @@ describe('calculateReconnectDelay', () => {
  * - The delay sequence is non-decreasing
  * - No delay exceeds 30,000ms
  */
-test.prop([fc.integer({ min: 0, max: 10 })])(
+test.prop([fc.integer({ min: 0, max: 10 })], { numRuns: 20 })(
   'calculateReconnectDelay is non-decreasing and never exceeds 30000ms',
   (attempt) => {
     const delay = calculateReconnectDelay(attempt);

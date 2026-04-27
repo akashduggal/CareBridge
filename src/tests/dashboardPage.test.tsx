@@ -54,6 +54,7 @@ function mockWs(overrides: Partial<WebSocketContextValue> = {}) {
     reconnecting: false,
     connectionAttempts: 0,
     lastEventId: null,
+    lastDischargeCreatedId: null,
     ...overrides,
   } satisfies WebSocketContextValue)
 }
@@ -266,6 +267,8 @@ describe('11.12 – Integration: loading skeleton → data → WebSocket event �
    *   5. Today's discharges count increments by 1 without a page reload
    *
    * Property 16: Dashboard WebSocket Event Count Updates
+   *
+   * // Feature: readmission-prevention-dashboard, Property 16: Dashboard WebSocket Event Count Updates
    */
   it('full sequence: mount → loading skeleton → data loaded → discharge_created → count increments', async () => {
     // ── Step 1 & 2: Mount with a never-resolving promise to observe loading state ──
@@ -505,6 +508,63 @@ describe('11.9 – call_completed WebSocket event: pending calls and tier distri
     await waitFor(() => {
       expect(screen.getByText(/Tier 3: 3/)).toBeInTheDocument()
     })
+  })
+})
+
+// ─── 19.3: Responsive layout — charts stack vertically on mobile/tablet, side-by-side on desktop ──
+
+describe('19.3 – Responsive layout: charts wrapper has correct Tailwind classes', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockWs()
+  })
+
+  it('charts wrapper has grid-cols-1 class for single-column (mobile/tablet) layout', async () => {
+    const stats = makeStats()
+    ;(apiClient as Mock).mockResolvedValue(stats)
+
+    renderDashboard()
+
+    await waitFor(() => {
+      expect(screen.getByText('Risk Tier Distribution')).toBeInTheDocument()
+    })
+
+    // The charts container must have grid-cols-1 (stacked on mobile/tablet)
+    const chartsWrapper = document.querySelector('.grid-cols-1.desktop\\:grid-cols-2')
+    expect(chartsWrapper).toBeInTheDocument()
+  })
+
+  it('charts wrapper has desktop:grid-cols-2 class for side-by-side (desktop) layout', async () => {
+    const stats = makeStats()
+    ;(apiClient as Mock).mockResolvedValue(stats)
+
+    renderDashboard()
+
+    await waitFor(() => {
+      expect(screen.getByText('Daily Discharge Volume (Past 7 Days)')).toBeInTheDocument()
+    })
+
+    // The charts container must have desktop:grid-cols-2 (side-by-side on desktop ≥1280px)
+    const chartsWrapper = document.querySelector('.desktop\\:grid-cols-2')
+    expect(chartsWrapper).toBeInTheDocument()
+  })
+
+  it('charts wrapper contains both chart panels', async () => {
+    const stats = makeStats()
+    ;(apiClient as Mock).mockResolvedValue(stats)
+
+    renderDashboard()
+
+    await waitFor(() => {
+      expect(screen.getByText('Risk Tier Distribution')).toBeInTheDocument()
+      expect(screen.getByText('Daily Discharge Volume (Past 7 Days)')).toBeInTheDocument()
+    })
+
+    // Both chart panels must be direct children of the responsive grid wrapper
+    const chartsWrapper = document.querySelector('.grid-cols-1.desktop\\:grid-cols-2')
+    expect(chartsWrapper).toBeInTheDocument()
+    const chartPanels = chartsWrapper!.querySelectorAll(':scope > div')
+    expect(chartPanels.length).toBe(2)
   })
 })
 

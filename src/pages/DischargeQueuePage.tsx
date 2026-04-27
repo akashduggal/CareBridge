@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useWebSocket } from '@/contexts/WebSocketContext'
 import { apiClient } from '@/lib/apiClient'
 import { queryKeys } from '@/lib/queryKeys'
 import { formatDateTime } from '@/utils/formatUtils'
@@ -11,13 +12,13 @@ import { SkeletonRow } from '@/components/SkeletonCard'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorBanner } from '@/components/ErrorBanner'
 import { Pagination } from '@/components/Pagination'
-import { FocusTrap } from '@/components/FocusTrap'
+import { DischargeDrawer } from '@/components/DischargeDrawer'
 import type {
   ApiResponse,
+  Call,
   CallOutcome,
   DiagnosisGroup,
   Discharge,
-  Medication,
   RiskTier,
 } from '@/types'
 
@@ -30,110 +31,6 @@ interface DischargeFilters {
   diagnosisGroup: DiagnosisGroup[]
   riskTier: RiskTier | null
   callOutcome: CallOutcome[]
-}
-
-interface DischargeWithHistory extends Discharge {
-  callHistory?: Array<{
-    id: string
-    timestamp: string
-    outcome: CallOutcome
-    riskScore?: number
-  }>
-}
-
-// ─── Drawer ───────────────────────────────────────────────────────────────────
-
-function DischargeDrawer({
-  discharge,
-  onClose,
-  triggerRef,
-}: {
-  discharge: DischargeWithHistory
-  onClose: () => void
-  triggerRef: React.RefObject<HTMLElement | null>
-}) {
-  return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Discharge details for ${discharge.patientName}`}
-      className="fixed inset-y-0 right-0 z-40 flex w-full max-w-md flex-col border-l border-gray-200 bg-white shadow-xl"
-    >
-      <FocusTrap returnFocusRef={triggerRef}>
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4">
-          <h2 className="text-base font-semibold text-gray-900">{discharge.patientName}</h2>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close drawer"
-            className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-6">
-          {/* Medications */}
-          <section>
-            <h3 className="mb-3 text-sm font-semibold text-gray-700">Medications</h3>
-            {discharge.medications.length === 0 ? (
-              <p className="text-sm text-gray-500">No medications recorded.</p>
-            ) : (
-              <ul className="space-y-2">
-                {discharge.medications.map((med: Medication, i: number) => (
-                  <li key={i} className="rounded-md border border-gray-100 bg-gray-50 px-3 py-2">
-                    <p className="text-sm font-medium text-gray-900">
-                      {med.name}
-                      {med.newMed && (
-                        <span className="ml-2 rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-semibold text-blue-700">
-                          New
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {med.dose} · {med.frequency}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          {/* Call history */}
-          <section>
-            <h3 className="mb-3 text-sm font-semibold text-gray-700">Call History</h3>
-            {!discharge.callHistory || discharge.callHistory.length === 0 ? (
-              <p className="text-sm text-gray-500">No calls recorded.</p>
-            ) : (
-              <ol className="relative border-l border-gray-200 pl-4 space-y-4">
-                {discharge.callHistory.map((call) => (
-                  <li key={call.id} className="relative">
-                    <span className="absolute -left-[1.125rem] top-1 h-3 w-3 rounded-full border-2 border-white bg-blue-500" />
-                    <p className="text-xs text-gray-500">{formatDateTime(call.timestamp)}</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <CallOutcomePill outcome={call.outcome} />
-                      {call.riskScore !== undefined && (
-                        <span className="text-xs text-gray-500">Score: {call.riskScore}</span>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ol>
-            )}
-          </section>
-        </div>
-      </FocusTrap>
-    </div>
-  )
 }
 
 // ─── Mobile card view ─────────────────────────────────────────────────────────
@@ -161,7 +58,7 @@ function DischargeCard({
       }
       className={[
         'rounded-lg border border-gray-200 bg-white p-4 shadow-sm',
-        isPhysician ? '' : 'cursor-pointer hover:border-blue-300 hover:shadow-md',
+        isPhysician ? '' : 'cursor-pointer hover:border-blue-300 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2',
       ].join(' ')}
     >
       <div className="flex items-start justify-between gap-2">
@@ -185,6 +82,7 @@ const RISK_TIERS: RiskTier[] = [1, 2, 3]
 
 export function DischargeQueuePage() {
   const { role } = useAuth()
+  const { lastDischargeCreatedId } = useWebSocket()
   const isPhysician = role === 'physician'
 
   const [page, setPage] = useState(1)
@@ -195,12 +93,22 @@ export function DischargeQueuePage() {
     riskTier: null,
     callOutcome: [],
   })
-  const [selectedDischarge, setSelectedDischarge] = useState<DischargeWithHistory | null>(null)
+  const [selectedDischarge, setSelectedDischarge] = useState<Discharge | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [newDischargesBanner, setNewDischargesBanner] = useState(false)
   const triggerRef = useRef<HTMLElement | null>(null)
 
+  // Show banner when a new discharge arrives and we're not on page 1
+  useEffect(() => {
+    if (lastDischargeCreatedId === null) return
+    if (page !== 1) {
+      setNewDischargesBanner(true)
+    }
+  }, [lastDischargeCreatedId, page])
+
   const queryParams = {
     page,
+    limit: 25,
     sortBy,
     sortDir,
     ...(filters.diagnosisGroup.length > 0 && { diagnosisGroup: filters.diagnosisGroup }),
@@ -217,8 +125,17 @@ export function DischargeQueuePage() {
     ).toString()),
   })
 
+  // Fetch calls for the selected discharge when the drawer is open
+  const { data: callsData } = useQuery<ApiResponse<Call[]>>({
+    queryKey: queryKeys.dischargeCalls(selectedDischarge?.id ?? ''),
+    queryFn: () =>
+      apiClient<ApiResponse<Call[]>>(`/api/discharges/${selectedDischarge!.id}/calls`),
+    enabled: drawerOpen && selectedDischarge !== null,
+  })
+
   const discharges = data?.data ?? []
   const total = data?.meta?.total ?? 0
+  const calls = callsData?.data ?? []
 
   function handleSort(col: SortColumn) {
     if (sortBy === col) {
@@ -233,16 +150,18 @@ export function DischargeQueuePage() {
   function handleRowClick(discharge: Discharge, el: HTMLElement) {
     if (isPhysician) return
     triggerRef.current = el
-    setSelectedDischarge(discharge as DischargeWithHistory)
+    setSelectedDischarge(discharge)
+    setDrawerOpen(true)
   }
 
   function handleCloseDrawer() {
+    setDrawerOpen(false)
     setSelectedDischarge(null)
   }
 
   // Close drawer on Escape
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === 'Escape' && selectedDischarge) handleCloseDrawer()
+    if (e.key === 'Escape' && drawerOpen) handleCloseDrawer()
   }
 
   function SortIcon({ col }: { col: SortColumn }) {
@@ -387,6 +306,9 @@ export function DischargeQueuePage() {
               onClick={() => handleRowClick(d, document.activeElement as HTMLElement)}
             />
           ))}
+        {total > 0 && (
+          <Pagination page={page} total={total} onPageChange={setPage} />
+        )}
       </div>
 
       {/* ── Table layout (tablet+) ── */}
@@ -488,20 +410,14 @@ export function DischargeQueuePage() {
       </div>
 
       {/* ── Slide-out drawer (Admin/Nurse only) ── */}
-      {selectedDischarge && !isPhysician && (
-        <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 z-30 bg-black/30"
-            onClick={handleCloseDrawer}
-            aria-hidden="true"
-          />
-          <DischargeDrawer
-            discharge={selectedDischarge}
-            onClose={handleCloseDrawer}
-            triggerRef={triggerRef}
-          />
-        </>
+      {!isPhysician && (
+        <DischargeDrawer
+          discharge={selectedDischarge}
+          calls={calls}
+          isOpen={drawerOpen}
+          onClose={handleCloseDrawer}
+          triggerRef={triggerRef}
+        />
       )}
     </div>
   )

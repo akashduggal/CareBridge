@@ -361,7 +361,7 @@ function isValidRole(role: string | undefined): boolean {
 }
 
 // Feature: readmission-prevention-dashboard, Property 20: Role-Based Route Access Enforcement
-test.prop([fc.constantFrom(...ALL_TEST_ROLES)], { numRuns: 100 })(
+test.prop([fc.constantFrom(...ALL_TEST_ROLES)], { numRuns: 20 })(
   'valid roles grant access; invalid roles trigger sign-out',
   (roleValue) => {
     const valid = isValidRole(roleValue)

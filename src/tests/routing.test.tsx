@@ -81,6 +81,7 @@ function mockWs() {
     reconnecting: false,
     connectionAttempts: 0,
     lastEventId: null,
+    lastDischargeCreatedId: null,
   } satisfies WebSocketContextValue)
 }
 
@@ -285,6 +286,79 @@ describe('5.8 – After sign-in, user is redirected to originally requested URL 
     })
 
     expect(capturedSearch).toBe('/dashboard')
+  })
+
+  // ─── 17.2: ?demo=true preserved in redirect when unauthenticated ─────────────
+
+  it('unauthenticated user visiting /dashboard?demo=true is redirected to /login with redirect param preserving ?demo=true', async () => {
+    // Requirement 8.2: When ?demo=true is present but user is NOT authenticated,
+    // the app SHALL redirect to /login with the redirect param preserving the
+    // full URL including ?demo=true, so demo mode activates automatically after sign-in.
+    mockAuth({ user: null, role: null, loading: false })
+
+    let capturedRedirect = ''
+
+    function LoginPageWithCapture() {
+      const [searchParams] = useSearchParams()
+      capturedRedirect = searchParams.get('redirect') ?? ''
+      return <div>Login</div>
+    }
+
+    render(
+      <QueryClientProvider client={makeQc()}>
+        <MemoryRouter initialEntries={['/dashboard?demo=true']}>
+          <Routes>
+            <Route path="/login" element={<LoginPageWithCapture />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('Login')).toBeInTheDocument()
+    })
+
+    // The redirect param must preserve the full path + query string including ?demo=true
+    expect(capturedRedirect).toBe('/dashboard?demo=true')
+  })
+
+  it('after sign-in, user with ?demo=true redirect param is sent back to /dashboard?demo=true', async () => {
+    // Requirement 8.2: After sign-in, the LoginPage redirects to the URL stored in
+    // the redirect param — which includes ?demo=true — so the DemoPanel activates.
+    mockAuth({ user: fakeUser, role: 'admin', loading: false })
+
+    render(
+      <QueryClientProvider client={makeQc()}>
+        <MemoryRouter initialEntries={['/login?redirect=%2Fdashboard%3Fdemo%3Dtrue']}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    )
+
+    // LoginPage should redirect to /dashboard?demo=true since user is authenticated
+    await waitFor(() => {
+      expect(screen.getByText('Dashboard')).toBeInTheDocument()
+    })
+
+    expect(screen.queryByRole('button', { name: /sign in with google/i })).not.toBeInTheDocument()
   })
 
   it('authenticated user visiting /login with redirect param is redirected to that URL', async () => {

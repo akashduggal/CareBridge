@@ -12,6 +12,7 @@ import { DischargeFormPage } from '@/pages/DischargeFormPage'
 import { TranscriptViewerPage } from '@/pages/TranscriptViewerPage'
 import { EscalationPage } from '@/pages/EscalationPage'
 import { PatientListPage } from '@/pages/PatientListPage'
+import { PatientDetailPage } from '@/pages/PatientDetailPage'
 import { PermissionDenied } from '@/pages/PermissionDenied'
 import { NotFound } from '@/pages/NotFound'
 
@@ -72,6 +73,16 @@ export default function App() {
                   <ProtectedRoute>
                     <AppShell>
                       <PatientListPage />
+                    </AppShell>
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/patients/:id"
+                element={
+                  <ProtectedRoute>
+                    <AppShell>
+                      <PatientDetailPage />
                     </AppShell>
                   </ProtectedRoute>
                 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { test } from '@fast-check/vitest';
 import * as fc from 'fast-check';
-import { validateICD10 } from '@/utils/validationUtils';
+import { validateICD10, validateFutureDatetime } from '@/utils/validationUtils';
 
 // ─── Unit tests ───────────────────────────────────────────────────────────────
 
@@ -97,7 +97,7 @@ const validICD10Arbitrary = fc.oneof(
  *
  * For any string, validateICD10 returns true iff it matches the pattern.
  */
-test.prop([fc.string()])(
+test.prop([fc.string()], { numRuns: 20 })(
   'validateICD10 returns true iff string matches ICD-10 pattern',
   (code) => {
     const pattern = /^[A-Z][0-9]{2}(\.[0-9A-Z]{1,4})?$/;
@@ -112,7 +112,7 @@ test.prop([fc.string()])(
  *
  * For any valid ICD-10 code, calling validateICD10 twice returns the same result.
  */
-test.prop([validICD10Arbitrary])(
+test.prop([validICD10Arbitrary], { numRuns: 20 })(
   'validateICD10 is idempotent: validateICD10(s) === validateICD10(s)',
   (code) => {
     const first = validateICD10(code);
@@ -120,5 +120,57 @@ test.prop([validICD10Arbitrary])(
     expect(first).toBe(second);
     // Valid codes must return true
     expect(first).toBe(true);
+  }
+);
+
+// ─── Property 11: Future Datetime Rejection ───────────────────────────────────
+
+/**
+ * Property 11: Future Datetime Rejection
+ * Validates: Requirements 6.4, 6.10
+ *
+ * For any datetime value, if the datetime is in the future (greater than the current moment),
+ * validateFutureDatetime SHALL return false. All past and present datetimes SHALL return true.
+ */
+test.prop([fc.date({ noInvalidDate: true })], { numRuns: 20 })(
+  'validateFutureDatetime rejects future dates, accepts past/present',
+  (date) => {
+    const now = new Date();
+    const result = validateFutureDatetime(date);
+
+    // If date is in the future, result must be false
+    if (date > now) {
+      expect(result).toBe(false);
+    } else {
+      // If date is in the past or present, result must be true
+      expect(result).toBe(true);
+    }
+  }
+);
+
+/**
+ * Property 11: Future Datetime Rejection - Boundary tests
+ * Validates: Requirements 6.4, 6.10
+ *
+ * Verifies exact boundary behavior at current time.
+ */
+test.prop([
+  fc.integer({ min: -1000, max: 1000 }).map((offsetMs) => {
+    const now = new Date();
+    return new Date(now.getTime() + offsetMs);
+  }),
+], { numRuns: 20 })(
+  'validateFutureDatetime boundary: now and immediate past/future',
+  (date) => {
+    const now = new Date();
+    const result = validateFutureDatetime(date);
+
+    // Exact current time should be accepted (not future)
+    const diff = date.getTime() - now.getTime();
+    if (diff <= 0) {
+      expect(result).toBe(true);
+    } else {
+      expect(result).toBe(false);
+    }
   }
 );

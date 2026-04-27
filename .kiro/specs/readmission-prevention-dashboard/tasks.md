@@ -37,7 +37,7 @@ This document contains the ordered implementation tasks for the Readmission Prev
 - [x] 3.1 Implement `deriveRiskTier(riskScore: number): RiskTier` — returns 1 if ≤3, 2 if 4–6, 3 if ≥7
 - [x] 3.2 Write PBT for `deriveRiskTier`: `fc.integer({ min: 0, max: 20 })` — verify correct tier for all inputs with boundaries at 3 and 6
   - `// Feature: readmission-prevention-dashboard, Property 1: Risk Tier Derivation Consistency`
-- [ ] 3.3 Implement `validateICD10(code: string): boolean` — pattern `^[A-Z][0-9]{2}(\.[0-9A-Z]{1,4})?$`
+- [x] 3.3 Implement `validateICD10(code: string): boolean` — pattern `^[A-Z][0-9]{2}(\.[0-9A-Z]{1,4})?$`
 - [x] 3.4 Write PBT for `validateICD10` correctness: `fc.string()` — verify true iff matches pattern
   - `// Feature: readmission-prevention-dashboard, Property 2: ICD-10 Validation Correctness`
 - [x] 3.5 Write PBT for `validateICD10` idempotence: valid code generator — verify `validateICD10(s) === validateICD10(s)`
@@ -188,166 +188,166 @@ This document contains the ordered implementation tasks for the Readmission Prev
 
 ## Task 12: Discharge Queue Page
 
-- [ ] 12.1 Implement `DischargeQueuePage` at `/discharges` — fetch `GET /discharges` with pagination/filter params
-- [ ] 12.2 Render table with columns: patient name, diagnosis group badge, discharge datetime, call outcome pill, risk tier badge; `<th>` with `scope` attributes
-- [ ] 12.3 Implement column header sort (ascending/descending toggle)
-- [ ] 12.4 Implement filter controls: Diagnosis Group (multi-select dropdown), Risk Tier (segmented button: All/1/2/3), Call Outcome (multi-select dropdown)
-- [ ] 12.5 Implement pagination: 25 rows per page, previous/next controls, page indicator
-- [ ] 12.6 Show table skeleton (5 placeholder rows) while fetching
-- [ ] 12.7 Show `ErrorBanner` with retry on fetch failure
-- [ ] 12.8 Show `EmptyState` "No discharges found" when no records
-- [ ] 12.9 Implement slide-out drawer for Admin/Nurse: medication list + call history timeline with timestamp, outcome, risk score
-- [ ] 12.10 Drawer: Escape key closes, focus trap while open, focus returns to triggering row on close
-- [ ] 12.11 Physician role: rows non-interactive (`cursor: default`, no hover state, no click handler)
-- [ ] 12.12 Handle `discharge_created` WebSocket: prepend to page 1; show dismissible "New discharges available" banner with "Go to page 1" button on other pages
-- [ ] 12.13 Responsive: card layout on mobile (<768px), scrollable table on tablet (768–1279px)
-- [ ] 12.14 Write PBT for sort reversibility: ascending + reverse = descending
+- [x] 12.1 Implement `DischargeQueuePage` at `/discharges` — fetch `GET /discharges` with pagination/filter params
+- [x] 12.2 Render table with columns: patient name, diagnosis group badge, discharge datetime, call outcome pill, risk tier badge; `<th>` with `scope` attributes
+- [x] 12.3 Implement column header sort (ascending/descending toggle)
+- [x] 12.4 Implement filter controls: Diagnosis Group (multi-select dropdown), Risk Tier (segmented button: All/1/2/3), Call Outcome (multi-select dropdown)
+- [x] 12.5 Implement pagination: 25 rows per page, previous/next controls, page indicator
+- [x] 12.6 Show table skeleton (5 placeholder rows) while fetching
+- [x] 12.7 Show `ErrorBanner` with retry on fetch failure
+- [x] 12.8 Show `EmptyState` "No discharges found" when no records
+- [x] 12.9 Implement slide-out drawer for Admin/Nurse: medication list + call history timeline with timestamp, outcome, risk score
+- [x] 12.10 Drawer: Escape key closes, focus trap while open, focus returns to triggering row on close
+- [x] 12.11 Physician role: rows non-interactive (`cursor: default`, no hover state, no click handler)
+- [x] 12.12 Handle `discharge_created` WebSocket: prepend to page 1; show dismissible "New discharges available" banner with "Go to page 1" button on other pages
+- [x] 12.13 Responsive: card layout on mobile (<768px), scrollable table on tablet (768–1279px)
+- [x] 12.14 Write PBT for sort reversibility: ascending + reverse = descending
   - `// Feature: readmission-prevention-dashboard, Property 7: Sort Operation Reversibility`
-- [ ] 12.15 Write PBT for filter subset invariant: filtered count ≤ total count
+- [x] 12.15 Write PBT for filter subset invariant: filtered count ≤ total count
   - `// Feature: readmission-prevention-dashboard, Property 8: Filter Subset Invariant`
-- [ ] 12.16 Write PBT for pagination row limit: each page ≤ 25 rows
+- [x] 12.16 Write PBT for pagination row limit: each page ≤ 25 rows
   - `// Feature: readmission-prevention-dashboard, Property 9: Pagination Row Limit Invariant`
-- [ ] 12.17 Write component tests: Physician rows non-interactive; Admin/Nurse rows open drawer on click
+- [x] 12.17 Write component tests: Physician rows non-interactive; Admin/Nurse rows open drawer on click
 
 ---
 
 ## Task 13: Call Transcript Viewer Page
 
-- [ ] 13.1 Implement `TranscriptViewerPage` at `/calls/:id` — fetch `GET /calls/:id/transcript`
-- [ ] 13.2 Render utterances with speaker labels ("Agent" / "Patient") visually distinguished by alignment and color
-- [ ] 13.3 Highlight `FlaggedPhrase` text in red (≥4.5:1 contrast) with keyboard-accessible tooltip showing clinical reason
-- [ ] 13.4 Render risk flags sidebar grouped by clinical category
-- [ ] 13.5 Render animated score meter: scale 0 to actual score, visual markers at 3, 6, 10+; ARIA label on meter
-- [ ] 13.6 Render `RiskTierBadge` consistent with risk score value
-- [ ] 13.7 Render confidence indicator as percentage; show "Low Confidence" warning badge if confidence < 0.6
-- [ ] 13.8 Show loading skeleton for transcript area and sidebar while fetching
-- [ ] 13.9 Show "Call not found" with link to Discharge Queue on 404
-- [ ] 13.10 Show `ErrorBanner` with retry on non-404 error
-- [ ] 13.11 Write component tests: highlighted phrase count equals sidebar item count
+- [x] 13.1 Implement `TranscriptViewerPage` at `/calls/:id` — fetch `GET /calls/:id/transcript`
+- [x] 13.2 Render utterances with speaker labels ("Agent" / "Patient") visually distinguished by alignment and color
+- [x] 13.3 Highlight `FlaggedPhrase` text in red (≥4.5:1 contrast) with keyboard-accessible tooltip showing clinical reason
+- [x] 13.4 Render risk flags sidebar grouped by clinical category
+- [x] 13.5 Render animated score meter: scale 0 to actual score, visual markers at 3, 6, 10+; ARIA label on meter
+- [x] 13.6 Render `RiskTierBadge` consistent with risk score value
+- [x] 13.7 Render confidence indicator as percentage; show "Low Confidence" warning badge if confidence < 0.6
+- [x] 13.8 Show loading skeleton for transcript area and sidebar while fetching
+- [x] 13.9 Show "Call not found" with link to Discharge Queue on 404
+- [x] 13.10 Show `ErrorBanner` with retry on non-404 error
+- [x] 13.11 Write component tests: highlighted phrase count equals sidebar item count
   - `// Feature: readmission-prevention-dashboard, Property 6: Flagged Phrase Count Invariant`
-- [ ] 13.12 Write component tests: "Low Confidence" badge visible iff confidence < 0.6
+- [x] 13.12 Write component tests: "Low Confidence" badge visible iff confidence < 0.6
   - `// Feature: readmission-prevention-dashboard, Property 5: Low Confidence Warning Badge Consistency`
-- [ ] 13.13 Write component tests: tier badge color consistent with risk score
+- [x] 13.13 Write component tests: tier badge color consistent with risk score
   - `// Feature: readmission-prevention-dashboard, Property 1: Risk Tier Derivation Consistency`
 
 ---
 
 ## Task 14: Escalation Management Page
 
-- [ ] 14.1 Implement `EscalationPage` at `/escalations` — fetch `GET /escalations`
-- [ ] 14.2 Render Tier 3 urgent alerts section (above Tier 2): red banners with patient name, risk score, confidence (if <0.6), link to transcript; ARIA live region for screen reader announcements
-- [ ] 14.3 Render Tier 2 callback queue section (Nurse/Admin only): cards with patient name, diagnosis group, discharge datetime, risk score
-- [ ] 14.4 Render Human Review queue section: cards with patient name, confidence, risk score, link to transcript
-- [ ] 14.5 Apply `getEscalationSection` routing: Tier 3 takes precedence; each record in exactly one section
-- [ ] 14.6 Show `EmptyState` "No active escalations" when all sections empty
-- [ ] 14.7 Show loading skeletons for each section while fetching
-- [ ] 14.8 Show `ErrorBanner` with retry on fetch failure
-- [ ] 14.9 Handle `escalation_triggered` WebSocket: add to correct section without page reload
-- [ ] 14.10 Write component tests: record with Tier 3 + confidence <0.6 appears only in Tier 3 section
-- [ ] 14.11 Write component tests: Tier 2 section hidden for Physician role
-- [ ] 14.12 Write PBT for escalation routing exclusivity (reuse Property 4 test from Task 3.9)
+- [x] 14.1 Implement `EscalationPage` at `/escalations` — fetch `GET /escalations`
+- [x] 14.2 Render Tier 3 urgent alerts section (above Tier 2): red banners with patient name, risk score, confidence (if <0.6), link to transcript; ARIA live region for screen reader announcements
+- [x] 14.3 Render Tier 2 callback queue section (Nurse/Admin only): cards with patient name, diagnosis group, discharge datetime, risk score
+- [x] 14.4 Render Human Review queue section: cards with patient name, confidence, risk score, link to transcript
+- [x] 14.5 Apply `getEscalationSection` routing: Tier 3 takes precedence; each record in exactly one section
+- [x] 14.6 Show `EmptyState` "No active escalations" when all sections empty
+- [x] 14.7 Show loading skeletons for each section while fetching
+- [x] 14.8 Show `ErrorBanner` with retry on fetch failure
+- [x] 14.9 Handle `escalation_triggered` WebSocket: add to correct section without page reload
+- [x] 14.10 Write component tests: record with Tier 3 + confidence <0.6 appears only in Tier 3 section
+- [x] 14.11 Write component tests: Tier 2 section hidden for Physician role
+- [x] 14.12 Write PBT for escalation routing exclusivity (reuse Property 4 test from Task 3.9)
 
 ---
 
 ## Task 15: Patient List Page
 
-- [ ] 15.1 Implement `PatientListPage` at `/patients` — fetch `GET /patients?page=<n>&limit=25`
-- [ ] 15.2 Render patient rows: name, date of birth, most recent discharge date
-- [ ] 15.3 Implement debounced search input (300ms): sends `GET /patients?search=<query>&page=<n>&limit=25`
-- [ ] 15.4 Clearing search triggers `GET /patients` without search param (full list restored)
-- [ ] 15.5 Implement pagination: 25 rows per page, previous/next controls
-- [ ] 15.6 Show loading skeleton while search request in-flight
-- [ ] 15.7 Show `EmptyState` "No patients found" when no results
-- [ ] 15.8 Show `ErrorBanner` with retry on fetch failure
-- [ ] 15.9 Navigate to patient detail view on row click (showing full discharge history)
-- [ ] 15.10 Write component tests: debounced search fires after 300ms; clears search restores full list
-- [ ] 15.11 Write PBT for search subset invariant: search result count ≤ total unfiltered count
+- [x] 15.1 Implement `PatientListPage` at `/patients` — fetch `GET /patients?page=<n>&limit=25`
+- [x] 15.2 Render patient rows: name, date of birth, most recent discharge date
+- [x] 15.3 Implement debounced search input (300ms): sends `GET /patients?search=<query>&page=<n>&limit=25`
+- [x] 15.4 Clearing search triggers `GET /patients` without search param (full list restored)
+- [x] 15.5 Implement pagination: 25 rows per page, previous/next controls
+- [x] 15.6 Show loading skeleton while search request in-flight
+- [x] 15.7 Show `EmptyState` "No patients found" when no results
+- [x] 15.8 Show `ErrorBanner` with retry on fetch failure
+- [x] 15.9 Navigate to patient detail view on row click (showing full discharge history)
+- [x] 15.10 Write component tests: debounced search fires after 300ms; clears search restores full list
+- [x] 15.11 Write PBT for search subset invariant: search result count ≤ total unfiltered count
 
 ---
 
 ## Task 16: Discharge Intake Form Page
 
-- [ ] 16.1 Implement `DischargeFormPage` at `/discharges/new` (Admin only)
-- [ ] 16.2 Implement patient search autocomplete (`GET /patients?search=<query>`) with inline new patient creation
-- [ ] 16.3 Implement Diagnosis Group selector (CHF, COPD, AMI, PNEUMONIA, ORTHO, OTHER)
-- [ ] 16.4 Implement ICD-10 code input with `validateICD10` pattern validation
-- [ ] 16.5 Implement discharge datetime picker — reject future datetimes
-- [ ] 16.6 Implement medication list editor: add rows (name, dosage, frequency, newMed), remove rows; remove button present iff >1 row
-- [ ] 16.7 Implement risk level selector (Low, Medium, High)
-- [ ] 16.8 On submit: validate all required fields; display inline errors adjacent to each invalid field via `aria-describedby`
-- [ ] 16.9 On valid submit: `POST /patients` (if new patient), then `POST /discharges`; show success notification (auto-dismiss 5s)
-- [ ] 16.10 On API failure: show persistent error notification with server message; keep form data intact
-- [ ] 16.11 All inputs have associated `<label>` elements; WCAG 2.1 AA compliant
-- [ ] 16.12 Nurse/Physician see form in read-only mode; submit button hidden
-- [ ] 16.13 Write PBT for form validation submission blocking: random missing-field states never call `POST /discharges`
+- [x] 16.1 Implement `DischargeFormPage` at `/discharges/new` (Admin only)
+- [x] 16.2 Implement patient search autocomplete (`GET /patients?search=<query>`) with inline new patient creation
+- [x] 16.3 Implement Diagnosis Group selector (CHF, COPD, AMI, PNEUMONIA, ORTHO, OTHER)
+- [x] 16.4 Implement ICD-10 code input with `validateICD10` pattern validation
+- [x] 16.5 Implement discharge datetime picker — reject future datetimes
+- [x] 16.6 Implement medication list editor: add rows (name, dosage, frequency, newMed), remove rows; remove button present iff >1 row
+- [x] 16.7 Implement risk level selector (Low, Medium, High)
+- [x] 16.8 On submit: validate all required fields; display inline errors adjacent to each invalid field via `aria-describedby`
+- [x] 16.9 On valid submit: `POST /patients` (if new patient), then `POST /discharges`; show success notification (auto-dismiss 5s)
+- [x] 16.10 On API failure: show persistent error notification with server message; keep form data intact
+- [x] 16.11 All inputs have associated `<label>` elements; WCAG 2.1 AA compliant
+- [x] 16.12 Nurse/Physician see form in read-only mode; submit button hidden
+- [x] 16.13 Write PBT for form validation submission blocking: random missing-field states never call `POST /discharges`
   - `// Feature: readmission-prevention-dashboard, Property 10: Form Validation Submission Blocking`
-- [ ] 16.14 Write PBT for future datetime rejection: `fc.date()` — future dates rejected, past/present accepted
+- [x] 16.14 Write PBT for future datetime rejection: `fc.date()` — future dates rejected, past/present accepted
   - `// Feature: readmission-prevention-dashboard, Property 11: Future Datetime Rejection`
-- [ ] 16.15 Write component tests: remove button absent when only one medication row; present when >1
-- [ ] 16.16 Write integration test: fill valid data → submit → `POST /discharges` called → success notification shown
+- [x] 16.15 Write component tests: remove button absent when only one medication row; present when >1
+- [x] 16.16 Write integration test: fill valid data → submit → `POST /discharges` called → success notification shown
 
 ---
 
 ## Task 17: Demo Mode
 
-- [ ] 17.1 Implement `DemoPanel` floating component (bottom-right corner) — rendered only when `?demo=true` AND authenticated
-- [ ] 17.2 Redirect to `/login?redirect=<url-with-demo=true>` when `?demo=true` but unauthenticated
-- [ ] 17.3 Define mock data for three scenarios:
+- [x] 17.1 Implement `DemoPanel` floating component (bottom-right corner) — rendered only when `?demo=true` AND authenticated
+- [x] 17.2 Redirect to `/login?redirect=<url-with-demo=true>` when `?demo=true` but unauthenticated
+- [x] 17.3 Define mock data for three scenarios:
   - "Happy Path CHF": Tier 1, Risk Score 2, completed call
   - "Medium Risk COPD": Tier 2, Risk Score 5, completed call
   - "Emergency Chest Pain": Tier 3, Risk Score 9, completed call, active escalation
-- [ ] 17.4 On scenario button click: override TanStack Query cache with scenario mock data
-- [ ] 17.5 Highlight active scenario button; display "Demo Mode" badge in header
-- [ ] 17.6 In Demo Mode: disable live WebSocket; use local mock event emitter for scenario events
-- [ ] 17.7 In Demo Mode: intercept all REST API requests and resolve against mock data (no real network requests)
-- [ ] 17.8 Write component tests: `DemoPanel` not rendered when `?demo=true` absent
-- [ ] 17.9 Write component tests: no outbound network requests in Demo Mode
+- [x] 17.4 On scenario button click: override TanStack Query cache with scenario mock data
+- [x] 17.5 Highlight active scenario button; display "Demo Mode" badge in header
+- [x] 17.6 In Demo Mode: disable live WebSocket; use local mock event emitter for scenario events
+- [x] 17.7 In Demo Mode: intercept all REST API requests and resolve against mock data (no real network requests)
+- [x] 17.8 Write component tests: `DemoPanel` not rendered when `?demo=true` absent
+- [x] 17.9 Write component tests: no outbound network requests in Demo Mode
   - `// Feature: readmission-prevention-dashboard, Property: Demo Mode Network Isolation`
-- [ ] 17.10 Write component tests: "Emergency Chest Pain" scenario produces Tier 3 escalation in Escalation View
+- [x] 17.10 Write component tests: "Emergency Chest Pain" scenario produces Tier 3 escalation in Escalation View
 
 ---
 
 ## Task 18: Accessibility Audit and Fixes
 
-- [ ] 18.1 Audit all interactive elements for visible keyboard focus indicators (≥3:1 contrast)
-- [ ] 18.2 Audit all images and icons for descriptive `alt` text or `aria-label`
-- [ ] 18.3 Audit all form inputs for associated `<label>` or `aria-label`
-- [ ] 18.4 Verify color is never the sole means of conveying information (badges include text labels)
-- [ ] 18.5 Verify all modal dialogs and drawers trap focus and return focus on close
-- [ ] 18.6 Verify all data tables have `<th scope>` attributes
-- [ ] 18.7 Verify all error messages use `aria-live` or `role="alert"`
-- [ ] 18.8 Verify text contrast ≥4.5:1 (normal text) and ≥3:1 (large text) throughout
-- [ ] 18.9 Verify full keyboard operability — no mouse-only interactions
-- [ ] 18.10 Verify chart data has text-based screen reader alternative
+- [x] 18.1 Audit all interactive elements for visible keyboard focus indicators (≥3:1 contrast)
+- [x] 18.2 Audit all images and icons for descriptive `alt` text or `aria-label`
+- [x] 18.3 Audit all form inputs for associated `<label>` or `aria-label`
+- [x] 18.4 Verify color is never the sole means of conveying information (badges include text labels)
+- [x] 18.5 Verify all modal dialogs and drawers trap focus and return focus on close
+- [x] 18.6 Verify all data tables have `<th scope>` attributes
+- [x] 18.7 Verify all error messages use `aria-live` or `role="alert"`
+- [x] 18.8 Verify text contrast ≥4.5:1 (normal text) and ≥3:1 (large text) throughout
+- [x] 18.9 Verify full keyboard operability — no mouse-only interactions
+- [x] 18.10 Verify chart data has text-based screen reader alternative
 
 ---
 
 ## Task 19: Responsive Layout Verification
 
-- [ ] 19.1 Verify hamburger menu at <768px and 768–1279px; persistent sidebar at ≥1280px
-- [ ] 19.2 Verify Discharge Queue shows card layout at <768px and scrollable table at 768–1279px
-- [ ] 19.3 Verify Dashboard charts stack vertically on mobile and tablet; side-by-side on desktop
-- [ ] 19.4 Verify no horizontal scrollbar at any breakpoint when content fits viewport
+- [x] 19.1 Verify hamburger menu at <768px and 768–1279px; persistent sidebar at ≥1280px
+- [x] 19.2 Verify Discharge Queue shows card layout at <768px and scrollable table at 768–1279px
+- [x] 19.3 Verify Dashboard charts stack vertically on mobile and tablet; side-by-side on desktop
+- [x] 19.4 Verify no horizontal scrollbar at any breakpoint when content fits viewport
 
 ---
 
 ## Task 20: Integration Tests and Coverage Verification
 
-- [ ] 20.1 Write integration test: full Dashboard flow — mount → loading → data → WebSocket event → updated count
-- [ ] 20.2 Write integration test: full Discharge Form flow — fill valid data → submit → success notification
-- [ ] 20.3 Write integration test: Firebase auth flow — unauthenticated → redirect to `/login` → sign in → redirect to original route → protected content renders
-- [ ] 20.4 Write integration test: token refresh flow — token expiring in 3 min → API request → `getIdToken(true)` called → request sent with refreshed token
-- [ ] 20.5 Write integration test: WebSocket reconnection flow — disconnect → banner shown → reconnect attempts with backoff → reconnect success → banner hidden → queries refetched
-- [ ] 20.6 Run `vitest --run --coverage` and verify all critical paths meet 80% line coverage threshold
-- [ ] 20.7 Fix any coverage gaps on: risk score display logic, escalation routing, form submission, auth integration, role-based route guards, WebSocket reconnection, ICD-10 validation
+- [x] 20.1 Write integration test: full Dashboard flow — mount → loading → data → WebSocket event → updated count
+- [x] 20.2 Write integration test: full Discharge Form flow — fill valid data → submit → success notification
+- [x] 20.3 Write integration test: Firebase auth flow — unauthenticated → redirect to `/login` → sign in → redirect to original route → protected content renders
+- [x] 20.4 Write integration test: token refresh flow — token expiring in 3 min → API request → `getIdToken(true)` called → request sent with refreshed token
+- [x] 20.5 Write integration test: WebSocket reconnection flow — disconnect → banner shown → reconnect attempts with backoff → reconnect success → banner hidden → queries refetched
+- [x] 20.6 Run `vitest --run --coverage` and verify all critical paths meet 80% line coverage threshold
+- [x] 20.7 Fix any coverage gaps on: risk score display logic, escalation routing, form submission, auth integration, role-based route guards, WebSocket reconnection, ICD-10 validation
 
 ---
 
 ## Task 21: Build Verification and Final Checks
 
-- [ ] 21.1 Run `tsc --noEmit` — verify zero TypeScript errors with `strict: true`
-- [ ] 21.2 Verify no `any` types used without inline justification comment
-- [ ] 21.3 Run `vitest --run` — verify all tests pass
-- [ ] 21.4 Run production build (`vite build`) — verify no build errors
-- [ ] 21.5 Verify environment variables documented in `.env.example`
-- [ ] 21.6 Verify `vitest --run` command works for CI single-execution compatibility
+- [x] 21.1 Run `tsc --noEmit` — verify zero TypeScript errors with `strict: true`
+- [x] 21.2 Verify no `any` types used without inline justification comment
+- [x] 21.3 Run `vitest --run` — verify all tests pass
+- [x] 21.4 Run production build (`vite build`) — verify no build errors
+- [x] 21.5 Verify environment variables documented in `.env.example`
+- [x] 21.6 Verify `vitest --run` command works for CI single-execution compatibility

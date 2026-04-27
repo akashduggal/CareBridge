@@ -198,4 +198,6 @@ export interface WebSocketContextValue {
   reconnecting: boolean;
   connectionAttempts: number;
   lastEventId: string | null;
+  /** ID of the most recent discharge_created event (changes each time a new discharge arrives) */
+  lastDischargeCreatedId: string | null;
 }
