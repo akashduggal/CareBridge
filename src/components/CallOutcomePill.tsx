@@ -8,12 +8,22 @@ const OUTCOME_CONFIG: Record<CallOutcome, { label: string; classes: string }> = 
   wrong_party: { label: 'Wrong Party', classes: 'bg-orange-100 text-orange-700' },
 }
 
+const CALL_STATUS_FALLBACK: Record<string, { label: string; classes: string }> = {
+  pending: { label: 'Pending', classes: 'bg-gray-100 text-gray-500' },
+  in_progress: { label: 'In Progress', classes: 'bg-yellow-100 text-yellow-700' },
+  failed: { label: 'Failed', classes: 'bg-red-100 text-red-600' },
+}
+
 interface CallOutcomePillProps {
   outcome: CallOutcome
 }
 
 export function CallOutcomePill({ outcome }: CallOutcomePillProps) {
-  const { label, classes } = OUTCOME_CONFIG[outcome]
+  const config =
+    OUTCOME_CONFIG[outcome] ??
+    CALL_STATUS_FALLBACK[outcome] ??
+    { label: outcome, classes: 'bg-gray-100 text-gray-500' }
+  const { label, classes } = config
   return (
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${classes}`}

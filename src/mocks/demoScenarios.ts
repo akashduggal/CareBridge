@@ -369,6 +369,8 @@ export interface ScenarioData {
   patientDischarges: ApiResponse<Discharge[]>
   /** Calls for the primary discharge (DischargeQueuePage drawer) */
   dischargeCalls: ApiResponse<Call[]>
+  /** Calls keyed by discharge ID — enables drawer for any discharge in the queue */
+  callsByDischargeId: Record<string, Call[]>
 }
 
 // ─── Escalation entries for non-emergency scenarios ──────────────────────────
@@ -408,6 +410,463 @@ const mediumRiskEscalation: Escalation = {
   createdAt: isoDateTime(0, 10, 20),
 }
 
+// ─── Comprehensive Discharge Queue Entries ────────────────────────────────────
+// Covers every DiagnosisGroup × CallOutcome × RiskTier combination visible in
+// the Discharge Queue page, plus edge cases (pending/in_progress/failed call
+// statuses, missing risk tier, varying medication counts).
+
+const queueDischarges: Discharge[] = [
+  // ── CHF variants ────────────────────────────────────────────────────────────
+  {
+    id: 'demo-dq-chf-completed-t1',
+    patientId: 'demo-patient-chf-001',
+    patientName: 'Margaret Thompson',
+    diagnosisGroup: 'CHF',
+    icd10Code: 'I50.9',
+    dischargeDateTime: isoDateTime(-1, 8, 30),
+    medications: [
+      { name: 'Furosemide', dose: '40 mg', frequency: 'Once daily', newMed: false },
+      { name: 'Lisinopril', dose: '10 mg', frequency: 'Once daily', newMed: false },
+      { name: 'Carvedilol', dose: '6.25 mg', frequency: 'Twice daily', newMed: true },
+    ],
+    riskLevel: 'low',
+    callStatus: 'completed',
+    riskScore: 2,
+    riskTier: 1,
+    confidence: 0.91,
+  },
+  {
+    id: 'demo-dq-chf-voicemail-t2',
+    patientId: 'demo-patient-dq-002',
+    patientName: 'Dorothy Williams',
+    diagnosisGroup: 'CHF',
+    icd10Code: 'I50.22',
+    dischargeDateTime: isoDateTime(-2, 11, 15),
+    medications: [
+      { name: 'Furosemide', dose: '80 mg', frequency: 'Twice daily', newMed: true },
+      { name: 'Spironolactone', dose: '25 mg', frequency: 'Once daily', newMed: true },
+    ],
+    riskLevel: 'medium',
+    callStatus: 'completed',
+    riskScore: 5,
+    riskTier: 2,
+    confidence: 0.72,
+  },
+  {
+    id: 'demo-dq-chf-noanswer-t3',
+    patientId: 'demo-patient-dq-003',
+    patientName: 'Harold Jenkins',
+    diagnosisGroup: 'CHF',
+    icd10Code: 'I50.33',
+    dischargeDateTime: isoDateTime(-1, 15, 0),
+    medications: [
+      { name: 'Furosemide', dose: '40 mg', frequency: 'Once daily', newMed: false },
+      { name: 'Digoxin', dose: '0.125 mg', frequency: 'Once daily', newMed: true },
+      { name: 'Sacubitril/Valsartan', dose: '24/26 mg', frequency: 'Twice daily', newMed: true },
+      { name: 'Dapagliflozin', dose: '10 mg', frequency: 'Once daily', newMed: true },
+    ],
+    riskLevel: 'high',
+    callStatus: 'completed',
+    riskScore: 8,
+    riskTier: 3,
+    confidence: 0.88,
+  },
+
+  // ── COPD variants ───────────────────────────────────────────────────────────
+  {
+    id: 'demo-dq-copd-completed-t2',
+    patientId: 'demo-patient-copd-001',
+    patientName: 'Robert Nguyen',
+    diagnosisGroup: 'COPD',
+    icd10Code: 'J44.1',
+    dischargeDateTime: isoDateTime(-2, 14, 0),
+    medications: [
+      { name: 'Tiotropium', dose: '18 mcg', frequency: 'Once daily (inhaled)', newMed: false },
+      { name: 'Albuterol', dose: '90 mcg', frequency: 'As needed', newMed: false },
+      { name: 'Prednisone', dose: '40 mg', frequency: 'Once daily (taper)', newMed: true },
+      { name: 'Azithromycin', dose: '250 mg', frequency: 'Once daily × 5 days', newMed: true },
+    ],
+    riskLevel: 'medium',
+    callStatus: 'completed',
+    riskScore: 5,
+    riskTier: 2,
+    confidence: 0.78,
+  },
+  {
+    id: 'demo-dq-copd-refused-t1',
+    patientId: 'demo-patient-dq-005',
+    patientName: 'Patricia Garcia',
+    diagnosisGroup: 'COPD',
+    icd10Code: 'J44.0',
+    dischargeDateTime: isoDateTime(-3, 9, 45),
+    medications: [
+      { name: 'Fluticasone/Salmeterol', dose: '250/50 mcg', frequency: 'Twice daily (inhaled)', newMed: false },
+    ],
+    riskLevel: 'low',
+    callStatus: 'completed',
+    riskScore: 3,
+    riskTier: 1,
+    confidence: 0.85,
+  },
+  {
+    id: 'demo-dq-copd-wrongparty-t3',
+    patientId: 'demo-patient-dq-006',
+    patientName: 'Frank Morrison',
+    diagnosisGroup: 'COPD',
+    icd10Code: 'J44.9',
+    dischargeDateTime: isoDateTime(-1, 7, 0),
+    medications: [
+      { name: 'Tiotropium', dose: '18 mcg', frequency: 'Once daily (inhaled)', newMed: false },
+      { name: 'Budesonide/Formoterol', dose: '160/4.5 mcg', frequency: 'Twice daily', newMed: true },
+      { name: 'Roflumilast', dose: '500 mcg', frequency: 'Once daily', newMed: true },
+    ],
+    riskLevel: 'high',
+    callStatus: 'completed',
+    riskScore: 9,
+    riskTier: 3,
+    confidence: 0.65,
+  },
+
+  // ── AMI variants ────────────────────────────────────────────────────────────
+  {
+    id: 'demo-dq-ami-completed-t3',
+    patientId: 'demo-patient-ami-001',
+    patientName: 'James Okafor',
+    diagnosisGroup: 'AMI',
+    icd10Code: 'I21.9',
+    dischargeDateTime: isoDateTime(-1, 16, 45),
+    medications: [
+      { name: 'Aspirin', dose: '81 mg', frequency: 'Once daily', newMed: false },
+      { name: 'Clopidogrel', dose: '75 mg', frequency: 'Once daily', newMed: true },
+      { name: 'Atorvastatin', dose: '80 mg', frequency: 'Once daily at bedtime', newMed: true },
+      { name: 'Metoprolol succinate', dose: '25 mg', frequency: 'Once daily', newMed: true },
+      { name: 'Lisinopril', dose: '5 mg', frequency: 'Once daily', newMed: true },
+    ],
+    riskLevel: 'high',
+    callStatus: 'completed',
+    riskScore: 9,
+    riskTier: 3,
+    confidence: 0.85,
+  },
+  {
+    id: 'demo-dq-ami-voicemail-t2',
+    patientId: 'demo-patient-dq-008',
+    patientName: 'Linda Chen',
+    diagnosisGroup: 'AMI',
+    icd10Code: 'I21.01',
+    dischargeDateTime: isoDateTime(-2, 12, 30),
+    medications: [
+      { name: 'Aspirin', dose: '81 mg', frequency: 'Once daily', newMed: false },
+      { name: 'Ticagrelor', dose: '90 mg', frequency: 'Twice daily', newMed: true },
+      { name: 'Rosuvastatin', dose: '40 mg', frequency: 'Once daily', newMed: true },
+    ],
+    riskLevel: 'medium',
+    callStatus: 'completed',
+    riskScore: 6,
+    riskTier: 2,
+    confidence: 0.74,
+  },
+
+  // ── PNEUMONIA variants ──────────────────────────────────────────────────────
+  {
+    id: 'demo-dq-pneu-completed-t1',
+    patientId: 'demo-patient-dq-009',
+    patientName: 'Susan Park',
+    diagnosisGroup: 'PNEUMONIA',
+    icd10Code: 'J18.9',
+    dischargeDateTime: isoDateTime(-3, 10, 0),
+    medications: [
+      { name: 'Amoxicillin', dose: '500 mg', frequency: 'Three times daily × 7 days', newMed: true },
+      { name: 'Guaifenesin', dose: '400 mg', frequency: 'Every 4 hours as needed', newMed: true },
+    ],
+    riskLevel: 'low',
+    callStatus: 'completed',
+    riskScore: 1,
+    riskTier: 1,
+    confidence: 0.95,
+  },
+  {
+    id: 'demo-dq-pneu-noanswer-t2',
+    patientId: 'demo-patient-dq-010',
+    patientName: 'George Patel',
+    diagnosisGroup: 'PNEUMONIA',
+    icd10Code: 'J15.9',
+    dischargeDateTime: isoDateTime(-1, 13, 30),
+    medications: [
+      { name: 'Levofloxacin', dose: '750 mg', frequency: 'Once daily × 5 days', newMed: true },
+      { name: 'Acetaminophen', dose: '500 mg', frequency: 'Every 6 hours as needed', newMed: false },
+    ],
+    riskLevel: 'medium',
+    callStatus: 'completed',
+    riskScore: 4,
+    riskTier: 2,
+    confidence: 0.69,
+  },
+  {
+    id: 'demo-dq-pneu-refused-t3',
+    patientId: 'demo-patient-dq-011',
+    patientName: 'Betty Kowalski',
+    diagnosisGroup: 'PNEUMONIA',
+    icd10Code: 'J13',
+    dischargeDateTime: isoDateTime(-1, 6, 0),
+    medications: [
+      { name: 'Ceftriaxone', dose: '1 g', frequency: 'IV once daily (transitioned to oral)', newMed: true },
+      { name: 'Azithromycin', dose: '500 mg', frequency: 'Once daily × 3 days', newMed: true },
+      { name: 'Albuterol', dose: '90 mcg', frequency: 'As needed', newMed: true },
+    ],
+    riskLevel: 'high',
+    callStatus: 'completed',
+    riskScore: 7,
+    riskTier: 3,
+    confidence: 0.82,
+  },
+
+  // ── ORTHO variants ──────────────────────────────────────────────────────────
+  {
+    id: 'demo-dq-ortho-completed-t1',
+    patientId: 'demo-patient-dq-012',
+    patientName: 'Richard Adams',
+    diagnosisGroup: 'ORTHO',
+    icd10Code: 'M17.11',
+    dischargeDateTime: isoDateTime(-4, 9, 0),
+    medications: [
+      { name: 'Acetaminophen', dose: '1000 mg', frequency: 'Every 6 hours', newMed: false },
+      { name: 'Enoxaparin', dose: '40 mg', frequency: 'Once daily (subcutaneous)', newMed: true },
+    ],
+    riskLevel: 'low',
+    callStatus: 'completed',
+    riskScore: 2,
+    riskTier: 1,
+    confidence: 0.93,
+  },
+  {
+    id: 'demo-dq-ortho-voicemail-t2',
+    patientId: 'demo-patient-dq-013',
+    patientName: 'Maria Santos',
+    diagnosisGroup: 'ORTHO',
+    icd10Code: 'S72.001A',
+    dischargeDateTime: isoDateTime(-2, 16, 0),
+    medications: [
+      { name: 'Oxycodone', dose: '5 mg', frequency: 'Every 4–6 hours as needed', newMed: true },
+      { name: 'Docusate', dose: '100 mg', frequency: 'Twice daily', newMed: true },
+      { name: 'Enoxaparin', dose: '40 mg', frequency: 'Once daily (subcutaneous)', newMed: true },
+      { name: 'Calcium + Vitamin D', dose: '600 mg / 800 IU', frequency: 'Once daily', newMed: true },
+    ],
+    riskLevel: 'medium',
+    callStatus: 'completed',
+    riskScore: 5,
+    riskTier: 2,
+    confidence: 0.71,
+  },
+
+  // ── OTHER variants ──────────────────────────────────────────────────────────
+  {
+    id: 'demo-dq-other-completed-t1',
+    patientId: 'demo-patient-dq-014',
+    patientName: 'Thomas Brown',
+    diagnosisGroup: 'OTHER',
+    icd10Code: 'K35.80',
+    dischargeDateTime: isoDateTime(-5, 11, 0),
+    medications: [
+      { name: 'Ciprofloxacin', dose: '500 mg', frequency: 'Twice daily × 7 days', newMed: true },
+      { name: 'Metronidazole', dose: '500 mg', frequency: 'Three times daily × 7 days', newMed: true },
+    ],
+    riskLevel: 'low',
+    callStatus: 'completed',
+    riskScore: 1,
+    riskTier: 1,
+    confidence: 0.97,
+  },
+  {
+    id: 'demo-dq-other-noanswer-t3',
+    patientId: 'demo-patient-dq-015',
+    patientName: 'Nancy Rivera',
+    diagnosisGroup: 'OTHER',
+    icd10Code: 'N17.9',
+    dischargeDateTime: isoDateTime(-1, 8, 0),
+    medications: [
+      { name: 'IV Fluids (transitioned to oral)', dose: 'N/A', frequency: 'As tolerated', newMed: false },
+      { name: 'Lisinopril', dose: '2.5 mg', frequency: 'Once daily', newMed: true },
+    ],
+    riskLevel: 'high',
+    callStatus: 'completed',
+    riskScore: 8,
+    riskTier: 3,
+    confidence: 0.76,
+  },
+
+  // ── Edge cases: non-completed call statuses ─────────────────────────────────
+  {
+    id: 'demo-dq-pending-call',
+    patientId: 'demo-patient-dq-016',
+    patientName: 'William Foster',
+    diagnosisGroup: 'CHF',
+    icd10Code: 'I50.9',
+    dischargeDateTime: isoDateTime(0, 7, 0),
+    medications: [
+      { name: 'Furosemide', dose: '20 mg', frequency: 'Once daily', newMed: true },
+    ],
+    riskLevel: 'low',
+    callStatus: 'pending',
+    riskScore: 3,
+    riskTier: 1,
+    confidence: undefined,
+  },
+  {
+    id: 'demo-dq-inprogress-call',
+    patientId: 'demo-patient-dq-017',
+    patientName: 'Elizabeth Kim',
+    diagnosisGroup: 'COPD',
+    icd10Code: 'J44.1',
+    dischargeDateTime: isoDateTime(0, 6, 30),
+    medications: [
+      { name: 'Tiotropium', dose: '18 mcg', frequency: 'Once daily (inhaled)', newMed: false },
+      { name: 'Prednisone', dose: '30 mg', frequency: 'Once daily (taper)', newMed: true },
+    ],
+    riskLevel: 'medium',
+    callStatus: 'in_progress',
+    riskScore: undefined,
+    riskTier: undefined,
+    confidence: undefined,
+  },
+  {
+    id: 'demo-dq-failed-call',
+    patientId: 'demo-patient-dq-018',
+    patientName: 'Charles Davis',
+    diagnosisGroup: 'AMI',
+    icd10Code: 'I21.4',
+    dischargeDateTime: isoDateTime(-1, 18, 0),
+    medications: [
+      { name: 'Aspirin', dose: '81 mg', frequency: 'Once daily', newMed: false },
+      { name: 'Clopidogrel', dose: '75 mg', frequency: 'Once daily', newMed: true },
+    ],
+    riskLevel: 'high',
+    callStatus: 'failed',
+    riskScore: 7,
+    riskTier: 3,
+    confidence: undefined,
+  },
+
+  // ── Edge case: no risk tier assigned yet ────────────────────────────────────
+  {
+    id: 'demo-dq-no-risk-tier',
+    patientId: 'demo-patient-dq-019',
+    patientName: 'Barbara Lee',
+    diagnosisGroup: 'PNEUMONIA',
+    icd10Code: 'J18.1',
+    dischargeDateTime: isoDateTime(0, 5, 0),
+    medications: [],
+    riskLevel: 'low',
+    callStatus: 'pending',
+    riskScore: undefined,
+    riskTier: undefined,
+    confidence: undefined,
+  },
+
+  // ── Additional call outcome coverage ────────────────────────────────────────
+  {
+    id: 'demo-dq-voicemail-ortho',
+    patientId: 'demo-patient-dq-020',
+    patientName: 'Helen Wright',
+    diagnosisGroup: 'ORTHO',
+    icd10Code: 'M16.11',
+    dischargeDateTime: isoDateTime(-3, 14, 30),
+    medications: [
+      { name: 'Celecoxib', dose: '200 mg', frequency: 'Once daily', newMed: true },
+      { name: 'Enoxaparin', dose: '40 mg', frequency: 'Once daily (subcutaneous)', newMed: true },
+    ],
+    riskLevel: 'medium',
+    callStatus: 'completed',
+    riskScore: 4,
+    riskTier: 2,
+    confidence: 0.80,
+  },
+  {
+    id: 'demo-dq-wrongparty-other',
+    patientId: 'demo-patient-dq-021',
+    patientName: 'Daniel Martinez',
+    diagnosisGroup: 'OTHER',
+    icd10Code: 'E11.65',
+    dischargeDateTime: isoDateTime(-2, 10, 0),
+    medications: [
+      { name: 'Metformin', dose: '500 mg', frequency: 'Twice daily', newMed: false },
+      { name: 'Insulin glargine', dose: '10 units', frequency: 'Once daily at bedtime', newMed: true },
+    ],
+    riskLevel: 'medium',
+    callStatus: 'completed',
+    riskScore: 6,
+    riskTier: 2,
+    confidence: 0.68,
+  },
+]
+
+/** Calls keyed by discharge ID — used by the interceptor to serve drawer data. */
+const queueCallsByDischargeId: Record<string, Call[]> = {
+  'demo-dq-chf-completed-t1': [happyPathCall],
+  'demo-dq-copd-completed-t2': [mediumRiskCall],
+  'demo-dq-ami-completed-t3': [emergencyCall],
+  'demo-dq-chf-voicemail-t2': [{
+    id: 'demo-call-dq-002', dischargeId: 'demo-dq-chf-voicemail-t2',
+    startTime: isoDateTime(0, 10, 0), outcome: 'voicemail', riskScore: 5, confidence: 0.72,
+  }],
+  'demo-dq-chf-noanswer-t3': [{
+    id: 'demo-call-dq-003', dischargeId: 'demo-dq-chf-noanswer-t3',
+    startTime: isoDateTime(0, 11, 0), outcome: 'no_answer', riskScore: 8, confidence: 0.88,
+  }],
+  'demo-dq-copd-refused-t1': [{
+    id: 'demo-call-dq-005', dischargeId: 'demo-dq-copd-refused-t1',
+    startTime: isoDateTime(0, 9, 30), outcome: 'refused', riskScore: 3, confidence: 0.85,
+  }],
+  'demo-dq-copd-wrongparty-t3': [{
+    id: 'demo-call-dq-006', dischargeId: 'demo-dq-copd-wrongparty-t3',
+    startTime: isoDateTime(0, 8, 0), outcome: 'wrong_party',
+  }],
+  'demo-dq-ami-voicemail-t2': [{
+    id: 'demo-call-dq-008', dischargeId: 'demo-dq-ami-voicemail-t2',
+    startTime: isoDateTime(0, 13, 0), outcome: 'voicemail', riskScore: 6, confidence: 0.74,
+  }],
+  'demo-dq-pneu-completed-t1': [{
+    id: 'demo-call-dq-009', dischargeId: 'demo-dq-pneu-completed-t1',
+    startTime: isoDateTime(-2, 11, 0), endTime: isoDateTime(-2, 11, 3), outcome: 'completed', riskScore: 1, confidence: 0.95,
+  }],
+  'demo-dq-pneu-noanswer-t2': [{
+    id: 'demo-call-dq-010', dischargeId: 'demo-dq-pneu-noanswer-t2',
+    startTime: isoDateTime(0, 14, 0), outcome: 'no_answer', riskScore: 4, confidence: 0.69,
+  }],
+  'demo-dq-pneu-refused-t3': [{
+    id: 'demo-call-dq-011', dischargeId: 'demo-dq-pneu-refused-t3',
+    startTime: isoDateTime(0, 7, 0), outcome: 'refused', riskScore: 7, confidence: 0.82,
+  }],
+  'demo-dq-ortho-completed-t1': [{
+    id: 'demo-call-dq-012', dischargeId: 'demo-dq-ortho-completed-t1',
+    startTime: isoDateTime(-3, 10, 0), endTime: isoDateTime(-3, 10, 2), outcome: 'completed', riskScore: 2, confidence: 0.93,
+  }],
+  'demo-dq-ortho-voicemail-t2': [{
+    id: 'demo-call-dq-013', dischargeId: 'demo-dq-ortho-voicemail-t2',
+    startTime: isoDateTime(-1, 17, 0), outcome: 'voicemail', riskScore: 5, confidence: 0.71,
+  }],
+  'demo-dq-other-completed-t1': [{
+    id: 'demo-call-dq-014', dischargeId: 'demo-dq-other-completed-t1',
+    startTime: isoDateTime(-4, 12, 0), endTime: isoDateTime(-4, 12, 2), outcome: 'completed', riskScore: 1, confidence: 0.97,
+  }],
+  'demo-dq-other-noanswer-t3': [{
+    id: 'demo-call-dq-015', dischargeId: 'demo-dq-other-noanswer-t3',
+    startTime: isoDateTime(0, 9, 0), outcome: 'no_answer', riskScore: 8, confidence: 0.76,
+  }],
+  'demo-dq-voicemail-ortho': [{
+    id: 'demo-call-dq-020', dischargeId: 'demo-dq-voicemail-ortho',
+    startTime: isoDateTime(-2, 15, 0), outcome: 'voicemail', riskScore: 4, confidence: 0.80,
+  }],
+  'demo-dq-wrongparty-other': [{
+    id: 'demo-call-dq-021', dischargeId: 'demo-dq-wrongparty-other',
+    startTime: isoDateTime(-1, 11, 0), outcome: 'wrong_party',
+  }],
+  'demo-dq-failed-call': [{
+    id: 'demo-call-dq-018', dischargeId: 'demo-dq-failed-call',
+    startTime: isoDateTime(0, 12, 0), outcome: 'no_answer',
+  }],
+}
+
 // ─── Scenario Registry ────────────────────────────────────────────────────────
 
 export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
@@ -422,8 +881,8 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       meta: { page: 1, limit: 25, total: 1 },
     },
     discharges: {
-      data: [happyPathDischarge],
-      meta: { page: 1, limit: 25, total: 1 },
+      data: queueDischarges,
+      meta: { page: 1, limit: 25, total: queueDischarges.length },
     },
     escalations: {
       data: [happyPathEscalation],
@@ -437,6 +896,7 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       data: [happyPathCall],
       meta: { page: 1, limit: 25, total: 1 },
     },
+    callsByDischargeId: queueCallsByDischargeId,
   },
 
   'medium-risk-copd': {
@@ -450,8 +910,8 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       meta: { page: 1, limit: 25, total: 1 },
     },
     discharges: {
-      data: [mediumRiskDischarge],
-      meta: { page: 1, limit: 25, total: 1 },
+      data: queueDischarges,
+      meta: { page: 1, limit: 25, total: queueDischarges.length },
     },
     escalations: {
       data: [mediumRiskEscalation],
@@ -465,6 +925,7 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       data: [mediumRiskCall],
       meta: { page: 1, limit: 25, total: 1 },
     },
+    callsByDischargeId: queueCallsByDischargeId,
   },
 
   'emergency-chest-pain': {
@@ -478,8 +939,8 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       meta: { page: 1, limit: 25, total: 1 },
     },
     discharges: {
-      data: [emergencyDischarge],
-      meta: { page: 1, limit: 25, total: 1 },
+      data: queueDischarges,
+      meta: { page: 1, limit: 25, total: queueDischarges.length },
     },
     escalations: {
       data: [emergencyEscalation],
@@ -493,5 +954,6 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
       data: [emergencyCall],
       meta: { page: 1, limit: 25, total: 1 },
     },
+    callsByDischargeId: queueCallsByDischargeId,
   },
 }

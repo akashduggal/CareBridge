@@ -17,11 +17,65 @@
 import type { DemoScenario } from '@/components/DemoPanel'
 import { DEMO_SCENARIOS } from '@/mocks/demoScenarios'
 import type { ScenarioData } from '@/mocks/demoScenarios'
+import type { Discharge } from '@/types'
 
 // ─── Original fetch reference ─────────────────────────────────────────────────
 
 let originalFetch: typeof globalThis.fetch | null = null
 let isInterceptorActive = false
+
+// ─── Discharge list filtering / sorting / pagination ─────────────────────────
+
+function resolveDischarges(urlObj: URL, scenarioData: ScenarioData): unknown {
+  const params = urlObj.searchParams
+  let items: Discharge[] = [...scenarioData.discharges.data]
+
+  // ── Filter: diagnosisGroup (multi-value) ──────────────────────────────────
+  const diagnosisGroups = params.getAll('diagnosisGroup')
+  if (diagnosisGroups.length > 0) {
+    items = items.filter((d) => diagnosisGroups.includes(d.diagnosisGroup))
+  }
+
+  // ── Filter: riskTier (multi-value) ────────────────────────────────────────
+  const riskTiers = params.getAll('riskTier').map(Number)
+  if (riskTiers.length > 0) {
+    items = items.filter((d) => d.riskTier !== undefined && riskTiers.includes(d.riskTier))
+  }
+
+  // ── Filter: callOutcome (multi-value, matches callStatus field) ───────────
+  const callOutcomes = params.getAll('callOutcome')
+  if (callOutcomes.length > 0) {
+    items = items.filter((d) => callOutcomes.includes(d.callStatus))
+  }
+
+  // ── Sort ──────────────────────────────────────────────────────────────────
+  const sortBy = params.get('sortBy') ?? 'dischargeDateTime'
+  const sortDir = params.get('sortDir') ?? 'desc'
+  const dir = sortDir === 'asc' ? 1 : -1
+
+  items.sort((a, b) => {
+    switch (sortBy) {
+      case 'patientName':
+        return dir * a.patientName.localeCompare(b.patientName)
+      case 'riskTier':
+        return dir * ((a.riskTier ?? 0) - (b.riskTier ?? 0))
+      case 'callStatus':
+        return dir * a.callStatus.localeCompare(b.callStatus)
+      case 'dischargeDateTime':
+      default:
+        return dir * (new Date(a.dischargeDateTime).getTime() - new Date(b.dischargeDateTime).getTime())
+    }
+  })
+
+  // ── Pagination ────────────────────────────────────────────────────────────
+  const total = items.length
+  const page = Math.max(1, parseInt(params.get('page') ?? '1', 10))
+  const limit = Math.max(1, parseInt(params.get('limit') ?? '25', 10))
+  const start = (page - 1) * limit
+  items = items.slice(start, start + limit)
+
+  return { data: items, meta: { page, limit, total } }
+}
 
 // ─── URL pattern matching ─────────────────────────────────────────────────────
 
@@ -40,9 +94,9 @@ function resolveMockResponse(url: string, method: string, scenarioData: Scenario
     return scenarioData.stats
   }
 
-  // GET /discharges (list)
+  // GET /discharges (list) — applies filters, sort, and pagination from query params
   if (method === 'GET' && /^(api\/)?discharges$/.test(pathname)) {
-    return scenarioData.discharges
+    return resolveDischarges(urlObj, scenarioData)
   }
 
   // GET /escalations
@@ -90,10 +144,16 @@ function resolveMockResponse(url: string, method: string, scenarioData: Scenario
   const dischargeCallsMatch = pathname.match(/^(?:api\/)?discharges\/([^/]+)\/calls$/)
   if (method === 'GET' && dischargeCallsMatch) {
     const dischargeId = dischargeCallsMatch[1]
+    // First check the callsByDischargeId map (covers all queue discharges)
+    if (scenarioData.callsByDischargeId?.[dischargeId]) {
+      const calls = scenarioData.callsByDischargeId[dischargeId]
+      return { data: calls, meta: { page: 1, limit: 25, total: calls.length } }
+    }
+    // Fall back to primary discharge calls
     if (dischargeId === scenarioData.discharge.id) {
       return scenarioData.dischargeCalls
     }
-    return null
+    return { data: [], meta: { page: 1, limit: 25, total: 0 } }
   }
 
   // POST /patients  (create patient — return the scenario patient)
