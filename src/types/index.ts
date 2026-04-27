@@ -47,6 +47,7 @@ export interface Discharge {
   medications: Medication[];
   riskLevel: "low" | "medium" | "high";
   callStatus: "pending" | "in_progress" | "completed" | "failed";
+  callOutcome?: CallOutcome; // Result of the completed call (voicemail, no_answer, etc.)
   riskScore?: number;
   riskTier?: RiskTier;
   confidence?: number;

@@ -644,9 +644,9 @@ describe('12.3 – Column header sort toggle', () => {
       expect(calls.some((url) => url.includes('sortBy=dischargeDateTime'))).toBe(true)
     })
 
-    // Click Call Outcome header
-    const callOutcomeHeader = within(getTable()).getByRole('button', { name: /call outcome/i })
-    await user.click(callOutcomeHeader)
+    // Click Call Status header
+    const callStatusHeader = within(getTable()).getByRole('button', { name: /call status/i })
+    await user.click(callStatusHeader)
 
     await waitFor(() => {
       const calls = (apiClient as Mock).mock.calls.map((c: unknown[]) => c[0] as string)

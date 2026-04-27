@@ -42,10 +42,10 @@ function resolveDischarges(urlObj: URL, scenarioData: ScenarioData): unknown {
     items = items.filter((d) => d.riskTier !== undefined && riskTiers.includes(d.riskTier))
   }
 
-  // ── Filter: callOutcome (multi-value, matches callStatus field) ───────────
+  // ── Filter: callOutcome (multi-value, matches callOutcome field) ─────────────
   const callOutcomes = params.getAll('callOutcome')
   if (callOutcomes.length > 0) {
-    items = items.filter((d) => callOutcomes.includes(d.callStatus))
+    items = items.filter((d) => d.callOutcome !== undefined && callOutcomes.includes(d.callOutcome))
   }
 
   // ── Sort ──────────────────────────────────────────────────────────────────

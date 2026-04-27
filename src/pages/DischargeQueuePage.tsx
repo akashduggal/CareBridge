@@ -8,6 +8,7 @@ import { formatDateTime } from '@/utils/formatUtils'
 import { RiskTierBadge } from '@/components/RiskTierBadge'
 import { DiagnosisGroupBadge } from '@/components/DiagnosisGroupBadge'
 import { CallOutcomePill } from '@/components/CallOutcomePill'
+import { CallStatusPill } from '@/components/CallStatusPill'
 import { SkeletonRow } from '@/components/SkeletonCard'
 import { EmptyState } from '@/components/EmptyState'
 import { ErrorBanner } from '@/components/ErrorBanner'
@@ -67,7 +68,8 @@ function DischargeCard({
       </div>
       <div className="mt-2 flex flex-wrap gap-2">
         <DiagnosisGroupBadge group={discharge.diagnosisGroup} />
-        <CallOutcomePill outcome={discharge.callStatus as CallOutcome} />
+        <CallStatusPill status={discharge.callStatus} />
+        <CallOutcomePill outcome={(discharge.callOutcome ?? discharge.callStatus) as CallOutcome} />
       </div>
       <p className="mt-2 text-xs text-gray-500">{formatDateTime(discharge.dischargeDateTime)}</p>
     </div>
@@ -168,8 +170,6 @@ export function DischargeQueuePage() {
     if (sortBy !== col) return <span className="ml-1 text-gray-300">↕</span>
     return <span className="ml-1">{sortDir === 'asc' ? '↑' : '↓'}</span>
   }
-  console.log("Discharges ::", discharges)
-  console.log("Filters :: ", filters)
   return (
     <div className="space-y-4" onKeyDown={handleKeyDown}>
       <h1 className="text-xl font-semibold text-gray-900">Discharge Queue</h1>
@@ -338,7 +338,8 @@ export function DischargeQueuePage() {
                   { col: 'patientName', label: 'Patient' },
                   { col: null, label: 'Diagnosis' },
                   { col: 'dischargeDateTime', label: 'Discharge Date' },
-                  { col: 'callStatus', label: 'Call Outcome' },
+                  { col: 'callStatus', label: 'Call Status' },
+                  { col: null, label: 'Call Outcome' },
                   { col: 'riskTier', label: 'Risk Tier' },
                 ] as { col: SortColumn | null; label: string }[]
               ).map(({ col, label }) => (
@@ -365,10 +366,10 @@ export function DischargeQueuePage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {isLoading &&
-              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={5} />)}
+              Array.from({ length: 5 }).map((_, i) => <SkeletonRow key={i} cols={6} />)}
             {!isLoading && discharges.length === 0 && (
               <tr>
-                <td colSpan={5}>
+                <td colSpan={6}>
                   <EmptyState message="No discharges found" />
                 </td>
               </tr>
@@ -407,7 +408,14 @@ export function DischargeQueuePage() {
                     {formatDateTime(d.dischargeDateTime)}
                   </td>
                   <td className="px-4 py-3">
-                    <CallOutcomePill outcome={d.callStatus as CallOutcome} />
+                    <CallStatusPill status={d.callStatus} />
+                  </td>
+                  <td className="px-4 py-3">
+                    {d.callOutcome ? (
+                      <CallOutcomePill outcome={d.callOutcome} />
+                    ) : (
+                      <span className="text-xs text-gray-400">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {d.riskTier ? (
