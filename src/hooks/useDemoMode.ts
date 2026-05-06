@@ -1,13 +1,11 @@
 /**
- * useDemoMode — returns true when the current URL contains `?demo=true`.
+ * useDemoMode — returns true when the VITE_DEMO_MODE environment variable is
+ * set to "true".
  *
- * Uses React Router's useSearchParams so the value is reactive and stays
- * in sync with the router state (unlike reading window.location.search directly,
- * which does not update when React Router navigates without a full page reload).
+ * Demo mode is enabled by default (VITE_DEMO_MODE=true in .env) so the app
+ * works out of the box without a backend. Set VITE_DEMO_MODE=false to connect
+ * to a real backend.
  */
-import { useSearchParams } from 'react-router-dom'
-
 export function useDemoMode(): boolean {
-  const [searchParams] = useSearchParams()
-  return searchParams.get('demo') === 'true'
+  return import.meta.env.VITE_DEMO_MODE === 'true'
 }

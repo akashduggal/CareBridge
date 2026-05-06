@@ -3,7 +3,6 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { useWebSocket } from '@/contexts/WebSocketContext'
 import { useDemoMode } from '@/hooks/useDemoMode'
-import { DemoPanel } from '@/components/DemoPanel'
 import { ProfileAvatar } from '@/components/ProfileAvatar'
 
 const NAV_LINKS = [
@@ -13,14 +12,14 @@ const NAV_LINKS = [
   { to: '/patients', label: 'Patients' },
 ]
 
-function NavItems({ onNavigate, demoMode }: { onNavigate?: () => void; demoMode: boolean }) {
+function NavItems({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <nav aria-label="Main navigation">
       <ul className="flex flex-col gap-1">
         {NAV_LINKS.map(({ to, label }) => (
           <li key={to}>
             <NavLink
-              to={demoMode ? `${to}?demo=true` : to}
+              to={to}
               onClick={onNavigate}
               className={({ isActive }) =>
                 [
@@ -112,7 +111,7 @@ export function AppShell({ children }: AppShellProps) {
             </span>
           )}
           <NavLink
-            to={isDemoMode ? '/profile?demo=true' : '/profile'}
+            to="/profile"
             className={({ isActive }) =>
               [
                 'rounded-md p-1 transition-colors',
@@ -144,7 +143,7 @@ export function AppShell({ children }: AppShellProps) {
           id="mobile-nav"
           className="border-b border-gray-200 bg-white px-4 py-3 desktop:hidden"
         >
-          <NavItems onNavigate={() => setMenuOpen(false)} demoMode={isDemoMode} />
+          <NavItems onNavigate={() => setMenuOpen(false)} />
         </div>
       )}
 
@@ -161,13 +160,13 @@ export function AppShell({ children }: AppShellProps) {
           </div>
 
           <div className="flex-1">
-            <NavItems demoMode={isDemoMode} />
+            <NavItems />
           </div>
 
           <div className="mt-6 border-t border-gray-200 pt-4">
             <div className="flex items-center gap-2">
               <NavLink
-                to={isDemoMode ? '/profile?demo=true' : '/profile'}
+                to="/profile"
                 className={({ isActive }) =>
                   [
                     'flex flex-1 items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition-colors',
@@ -220,9 +219,6 @@ export function AppShell({ children }: AppShellProps) {
           {children}
         </main>
       </div>
-
-      {/* ── Demo Panel (floating, bottom-right) ── */}
-      <DemoPanel />
     </div>
   )
 }

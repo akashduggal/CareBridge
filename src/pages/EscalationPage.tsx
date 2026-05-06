@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 import { apiClient } from '@/lib/apiClient'
 import { queryKeys } from '@/lib/queryKeys'
-import { useDemoMode } from '@/hooks/useDemoMode'
 import { getEscalationSection, shouldShowLowConfidenceWarning } from '@/utils/riskUtils'
 import { formatDateTime } from '@/utils/formatUtils'
 import { DiagnosisGroupBadge } from '@/components/DiagnosisGroupBadge'
@@ -143,7 +142,6 @@ function Tier1MonitoredCard({ escalation }: { escalation: Escalation }) {
 
 export function EscalationPage() {
   const { role } = useAuth()
-  const isDemoMode = useDemoMode()
   const isPhysician = role === 'physician'
 
   const { data, isLoading, isError, refetch } = useQuery<ApiResponse<Escalation[]>>({
@@ -154,7 +152,7 @@ export function EscalationPage() {
   const escalations = data?.data ?? []
 
   function callHref(callId: string) {
-    return isDemoMode ? `/calls/${callId}?demo=true` : `/calls/${callId}`
+    return `/calls/${callId}`
   }
 
   // Partition escalations into sections using getEscalationSection routing logic.

@@ -16,6 +16,13 @@ import { PatientDetailPage } from '@/pages/PatientDetailPage'
 import { ProfilePage } from '@/pages/ProfilePage'
 import { PermissionDenied } from '@/pages/PermissionDenied'
 import { NotFound } from '@/pages/NotFound'
+import { useDemoBootstrap } from '@/hooks/useDemoBootstrap'
+
+/** Activates demo mode on mount when VITE_DEMO_MODE=true. Renders nothing. */
+function DemoBootstrap() {
+  useDemoBootstrap()
+  return null
+}
 
 export default function App() {
   return (
@@ -23,6 +30,7 @@ export default function App() {
       <BrowserRouter>
         <AuthProvider>
           <WebSocketProvider>
+            <DemoBootstrap />
             <Routes>
               {/* Public */}
               <Route path="/login" element={<LoginPage />} />

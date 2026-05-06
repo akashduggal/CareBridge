@@ -324,19 +324,6 @@ const emergencyCall: Call = {
   transcript: emergencyCallTranscript,
 }
 
-const emergencyEscalation: Escalation = {
-  id: 'demo-escalation-ami-001',
-  dischargeId: 'demo-discharge-ami-001',
-  patientName: 'James Okafor',
-  diagnosisGroup: 'AMI',
-  dischargeDateTime: isoDateTime(-1, 16, 45),
-  riskScore: 9,
-  riskTier: 3,
-  confidence: 0.85,
-  callId: 'demo-call-ami-001',
-  createdAt: isoDateTime(0, 11, 33),
-}
-
 const emergencyStats: DashboardStats = {
   todayDischarges: 7,
   pendingCalls: 4,
@@ -373,12 +360,46 @@ export interface ScenarioData {
   callsByDischargeId: Record<string, Call[]>
 }
 
-// ─── Escalation entries for non-emergency scenarios ──────────────────────────
+// ─── Escalation entries ───────────────────────────────────────────────────────
 
 /**
- * Happy Path CHF — Tier 1, low confidence (0.48).
- * Confidence below 0.6 routes this to the Human Review section so clinical
- * staff can verify the low-risk assessment before closing the case.
+ * Tier 3 — Emergency AMI (riskTier 3, confidence 0.85).
+ * Routes to Tier 3 Urgent Alerts.
+ */
+const emergencyEscalationTier3: Escalation = {
+  id: 'demo-escalation-ami-001',
+  dischargeId: 'demo-discharge-ami-001',
+  patientName: 'James Okafor',
+  diagnosisGroup: 'AMI',
+  dischargeDateTime: isoDateTime(-1, 16, 45),
+  riskScore: 9,
+  riskTier: 3,
+  confidence: 0.85,
+  callId: 'demo-call-ami-001',
+  createdAt: isoDateTime(0, 11, 33),
+}
+
+/**
+ * Tier 2 — Medium Risk COPD (riskTier 2, confidence 0.78).
+ * Routes to Tier 2 Callback Queue for nurse follow-up.
+ */
+const mediumRiskEscalation: Escalation = {
+  id: 'demo-escalation-copd-001',
+  dischargeId: 'demo-discharge-copd-001',
+  patientName: 'Robert Nguyen',
+  diagnosisGroup: 'COPD',
+  dischargeDateTime: isoDateTime(-2, 14, 0),
+  riskScore: 5,
+  riskTier: 2,
+  confidence: 0.78,
+  callId: 'demo-call-copd-001',
+  createdAt: isoDateTime(0, 10, 20),
+}
+
+/**
+ * Human Review — CHF with low confidence (riskTier 1, confidence 0.48).
+ * Confidence below 0.6 routes this to Human Review so clinical staff can
+ * verify the low-risk assessment before closing the case.
  */
 const happyPathEscalation: Escalation = {
   id: 'demo-escalation-chf-001',
@@ -394,21 +415,32 @@ const happyPathEscalation: Escalation = {
 }
 
 /**
- * Medium Risk COPD — Tier 2, confidence 0.78.
- * Routes to the Tier 2 Callback Queue for nurse follow-up.
+ * Tier 1 Monitored — ORTHO, low risk, high confidence (riskTier 1, confidence 0.93).
+ * Routes to Tier 1 Monitored section.
  */
-const mediumRiskEscalation: Escalation = {
-  id: 'demo-escalation-copd-001',
-  dischargeId: 'demo-discharge-copd-001',
-  patientName: 'Robert Nguyen',
-  diagnosisGroup: 'COPD',
-  dischargeDateTime: isoDateTime(-2, 14, 0),
-  riskScore: 5,
-  riskTier: 2,
-  confidence: 0.78,
-  callId: 'demo-call-copd-001',
-  createdAt: isoDateTime(0, 10, 20),
+const tier1MonitoredEscalation: Escalation = {
+  id: 'demo-escalation-ortho-001',
+  dischargeId: 'demo-dq-ortho-completed-t1',
+  patientName: 'Richard Adams',
+  diagnosisGroup: 'ORTHO',
+  dischargeDateTime: isoDateTime(-4, 9, 0),
+  riskScore: 2,
+  riskTier: 1,
+  confidence: 0.93,
+  callId: 'demo-call-dq-012',
+  createdAt: isoDateTime(-3, 11, 0),
 }
+
+/**
+ * All four escalation sections represented — used as the default escalations
+ * mock data so the Escalations page always shows populated sections.
+ */
+const allSectionsEscalations: Escalation[] = [
+  emergencyEscalationTier3,   // → Tier 3 Urgent Alerts
+  mediumRiskEscalation,        // → Tier 2 Callback Queue
+  happyPathEscalation,         // → Human Review (low confidence)
+  tier1MonitoredEscalation,    // → Tier 1 Monitored
+]
 
 // ─── Comprehensive Discharge Queue Entries ────────────────────────────────────
 // Covers every DiagnosisGroup × CallOutcome × RiskTier combination visible in
@@ -817,6 +849,37 @@ const queueDischarges: Discharge[] = [
   },
 ]
 
+// ─── Patient list ─────────────────────────────────────────────────────────────
+// One patient record per unique patientId in queueDischarges, plus the three
+// primary scenario patients. Covers the full /patients page list.
+
+const queuePatients: Patient[] = [
+  // Primary scenario patients
+  happyPathPatient,   // Margaret Thompson — CHF
+  mediumRiskPatient,  // Robert Nguyen — COPD
+  emergencyPatient,   // James Okafor — AMI
+
+  // Additional patients from the discharge queue
+  { id: 'demo-patient-dq-002', name: 'Dorothy Williams',  dateOfBirth: '1942-06-18', lastDischargeDate: isoDateTime(-2, 11, 15) },
+  { id: 'demo-patient-dq-003', name: 'Harold Jenkins',    dateOfBirth: '1950-09-04', lastDischargeDate: isoDateTime(-1, 15, 0)  },
+  { id: 'demo-patient-dq-005', name: 'Patricia Garcia',   dateOfBirth: '1958-02-27', lastDischargeDate: isoDateTime(-3, 9, 45)  },
+  { id: 'demo-patient-dq-006', name: 'Frank Morrison',    dateOfBirth: '1963-11-30', lastDischargeDate: isoDateTime(-1, 7, 0)   },
+  { id: 'demo-patient-dq-008', name: 'Linda Chen',        dateOfBirth: '1967-04-12', lastDischargeDate: isoDateTime(-2, 12, 30) },
+  { id: 'demo-patient-dq-009', name: 'Susan Park',        dateOfBirth: '1971-08-22', lastDischargeDate: isoDateTime(-3, 10, 0)  },
+  { id: 'demo-patient-dq-010', name: 'George Patel',      dateOfBirth: '1945-03-07', lastDischargeDate: isoDateTime(-1, 13, 30) },
+  { id: 'demo-patient-dq-011', name: 'Betty Kowalski',    dateOfBirth: '1939-12-15', lastDischargeDate: isoDateTime(-1, 6, 0)   },
+  { id: 'demo-patient-dq-012', name: 'Richard Adams',     dateOfBirth: '1953-07-19', lastDischargeDate: isoDateTime(-4, 9, 0)   },
+  { id: 'demo-patient-dq-013', name: 'Maria Santos',      dateOfBirth: '1960-05-31', lastDischargeDate: isoDateTime(-2, 16, 0)  },
+  { id: 'demo-patient-dq-014', name: 'Thomas Brown',      dateOfBirth: '1975-01-08', lastDischargeDate: isoDateTime(-5, 11, 0)  },
+  { id: 'demo-patient-dq-015', name: 'Nancy Rivera',      dateOfBirth: '1948-10-23', lastDischargeDate: isoDateTime(-1, 8, 0)   },
+  { id: 'demo-patient-dq-016', name: 'William Foster',    dateOfBirth: '1982-03-14', lastDischargeDate: isoDateTime(0, 7, 0)    },
+  { id: 'demo-patient-dq-017', name: 'Elizabeth Kim',     dateOfBirth: '1969-09-02', lastDischargeDate: isoDateTime(0, 6, 30)   },
+  { id: 'demo-patient-dq-018', name: 'Charles Davis',     dateOfBirth: '1956-06-25', lastDischargeDate: isoDateTime(-1, 18, 0)  },
+  { id: 'demo-patient-dq-019', name: 'Barbara Lee',       dateOfBirth: '1944-11-11', lastDischargeDate: isoDateTime(0, 5, 0)    },
+  { id: 'demo-patient-dq-020', name: 'Helen Wright',      dateOfBirth: '1952-08-16', lastDischargeDate: isoDateTime(-3, 14, 30) },
+  { id: 'demo-patient-dq-021', name: 'Daniel Martinez',   dateOfBirth: '1978-02-20', lastDischargeDate: isoDateTime(-1, 11, 0)  },
+]
+
 /** Calls keyed by discharge ID — used by the interceptor to serve drawer data. */
 const queueCallsByDischargeId: Record<string, Call[]> = {
   'demo-dq-chf-completed-t1': [happyPathCall],
@@ -894,16 +957,16 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
     escalation: happyPathEscalation,
     stats: happyPathStats,
     patients: {
-      data: [happyPathPatient],
-      meta: { page: 1, limit: 25, total: 1 },
+      data: queuePatients,
+      meta: { page: 1, limit: 25, total: queuePatients.length },
     },
     discharges: {
       data: queueDischarges,
       meta: { page: 1, limit: 25, total: queueDischarges.length },
     },
     escalations: {
-      data: [],
-      meta: { page: 1, limit: 25, total: 0 },
+      data: allSectionsEscalations,
+      meta: { page: 1, limit: 25, total: allSectionsEscalations.length },
     },
     patientDischarges: {
       data: [happyPathDischarge],
@@ -923,16 +986,16 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
     escalation: mediumRiskEscalation,
     stats: mediumRiskStats,
     patients: {
-      data: [mediumRiskPatient],
-      meta: { page: 1, limit: 25, total: 1 },
+      data: queuePatients,
+      meta: { page: 1, limit: 25, total: queuePatients.length },
     },
     discharges: {
       data: queueDischarges,
       meta: { page: 1, limit: 25, total: queueDischarges.length },
     },
     escalations: {
-      data: [],
-      meta: { page: 1, limit: 25, total: 0 },
+      data: allSectionsEscalations,
+      meta: { page: 1, limit: 25, total: allSectionsEscalations.length },
     },
     patientDischarges: {
       data: [mediumRiskDischarge],
@@ -949,19 +1012,19 @@ export const DEMO_SCENARIOS: Record<DemoScenario, ScenarioData> = {
     patient: emergencyPatient,
     discharge: emergencyDischarge,
     call: emergencyCall,
-    escalation: emergencyEscalation,
+    escalation: emergencyEscalationTier3,
     stats: emergencyStats,
     patients: {
-      data: [emergencyPatient],
-      meta: { page: 1, limit: 25, total: 1 },
+      data: queuePatients,
+      meta: { page: 1, limit: 25, total: queuePatients.length },
     },
     discharges: {
       data: queueDischarges,
       meta: { page: 1, limit: 25, total: queueDischarges.length },
     },
     escalations: {
-      data: [emergencyEscalation],
-      meta: { page: 1, limit: 25, total: 1 },
+      data: allSectionsEscalations,
+      meta: { page: 1, limit: 25, total: allSectionsEscalations.length },
     },
     patientDischarges: {
       data: [emergencyDischarge],

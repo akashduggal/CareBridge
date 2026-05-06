@@ -34,6 +34,135 @@ interface DischargeFilters {
   callOutcome: CallOutcome[]
 }
 
+// ─── Multi-select dropdown ────────────────────────────────────────────────────
+
+interface MultiSelectDropdownProps<T extends string> {
+  label: string
+  options: { value: T; label: string }[]
+  selected: T[]
+  onChange: (next: T[]) => void
+}
+
+function MultiSelectDropdown<T extends string>({
+  label,
+  options,
+  selected,
+  onChange,
+}: MultiSelectDropdownProps<T>) {
+  const [open, setOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Close on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  function toggle(value: T) {
+    onChange(
+      selected.includes(value)
+        ? selected.filter((v) => v !== value)
+        : [...selected, value]
+    )
+  }
+
+  const summary =
+    selected.length === 0
+      ? label
+      : selected.length === 1
+        ? options.find((o) => o.value === selected[0])?.label ?? selected[0]
+        : `${label} (${selected.length})`
+
+  return (
+    <div ref={containerRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={[
+          'flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-sm font-medium',
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
+          selected.length > 0
+            ? 'border-blue-500 bg-blue-50 text-blue-700'
+            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50',
+        ].join(' ')}
+      >
+        <span>{summary}</span>
+        <svg
+          className={`h-4 w-4 transition-transform ${open ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {open && (
+        <ul
+          role="listbox"
+          aria-multiselectable="true"
+          aria-label={label}
+          className="absolute left-0 top-full z-20 mt-1 min-w-[10rem] rounded-md border border-gray-200 bg-white py-1 shadow-lg"
+        >
+          {options.map((opt) => {
+            const checked = selected.includes(opt.value)
+            return (
+              <li
+                key={opt.value}
+                role="option"
+                aria-selected={checked}
+                onClick={() => toggle(opt.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') toggle(opt.value) }}
+                tabIndex={0}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 focus:outline-none focus-visible:bg-blue-50"
+              >
+                <span
+                  className={[
+                    'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border',
+                    checked ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white',
+                  ].join(' ')}
+                  aria-hidden="true"
+                >
+                  {checked && (
+                    <svg className="h-2.5 w-2.5 text-white" viewBox="0 0 10 10" fill="currentColor">
+                      <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth={1.5} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </span>
+                {opt.label}
+              </li>
+            )
+          })}
+          {selected.length > 0 && (
+            <>
+              <li className="mx-2 my-1 border-t border-gray-100" role="separator" />
+              <li
+                role="option"
+                aria-selected={false}
+                onClick={() => onChange([])}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onChange([]) }}
+                tabIndex={0}
+                className="cursor-pointer px-3 py-2 text-xs font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus-visible:bg-gray-50"
+              >
+                Clear all
+              </li>
+            </>
+          )}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 // ─── Mobile card view ─────────────────────────────────────────────────────────
 
 function DischargeCard({
@@ -206,43 +335,8 @@ export function DischargeQueuePage() {
       )}
 
       {/* ── Filters ── */}
-      <div className="flex flex-wrap gap-3">
-        {/* Diagnosis Group segmented toggle */}
-        <div
-          role="group"
-          aria-label="Filter by Diagnosis Group"
-          className="flex flex-wrap rounded-md border border-gray-300 overflow-hidden"
-        >
-          {DIAGNOSIS_GROUPS.map((g) => {
-            const active = filters.diagnosisGroup.includes(g)
-            return (
-              <button
-                key={g}
-                type="button"
-                onClick={() => {
-                  setFilters((f) => ({
-                    ...f,
-                    diagnosisGroup: active
-                      ? f.diagnosisGroup.filter((x) => x !== g)
-                      : [...f.diagnosisGroup, g],
-                  }))
-                  setPage(1)
-                }}
-                aria-pressed={active}
-                className={[
-                  'px-3 py-1.5 text-sm font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
-                  active
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50',
-                ].join(' ')}
-              >
-                {g}
-              </button>
-            )
-          })}
-        </div>
-
-        {/* Risk Tier segmented button */}
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Risk Tier segmented button — unchanged */}
         <div
           role="group"
           aria-label="Filter by Risk Tier"
@@ -269,40 +363,30 @@ export function DischargeQueuePage() {
           ))}
         </div>
 
-        {/* Call Outcome segmented toggle */}
-        <div
-          role="group"
-          aria-label="Filter by Call Outcome"
-          className="flex flex-wrap rounded-md border border-gray-300 overflow-hidden"
-        >
-          {CALL_OUTCOMES.map((o) => {
-            const active = filters.callOutcome.includes(o)
-            return (
-              <button
-                key={o}
-                type="button"
-                onClick={() => {
-                  setFilters((f) => ({
-                    ...f,
-                    callOutcome: active
-                      ? f.callOutcome.filter((x) => x !== o)
-                      : [...f.callOutcome, o],
-                  }))
-                  setPage(1)
-                }}
-                aria-pressed={active}
-                className={[
-                  'px-3 py-1.5 text-sm font-medium capitalize focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600',
-                  active
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50',
-                ].join(' ')}
-              >
-                {o.replace('_', ' ')}
-              </button>
-            )
-          })}
-        </div>
+        {/* Diagnosis Group multi-select dropdown */}
+        <MultiSelectDropdown
+          label="Diagnosis"
+          options={DIAGNOSIS_GROUPS.map((g) => ({ value: g, label: g }))}
+          selected={filters.diagnosisGroup}
+          onChange={(next) => {
+            setFilters((f) => ({ ...f, diagnosisGroup: next }))
+            setPage(1)
+          }}
+        />
+
+        {/* Call Outcome multi-select dropdown */}
+        <MultiSelectDropdown
+          label="Outcome"
+          options={CALL_OUTCOMES.map((o) => ({
+            value: o,
+            label: o.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+          }))}
+          selected={filters.callOutcome}
+          onChange={(next) => {
+            setFilters((f) => ({ ...f, callOutcome: next }))
+            setPage(1)
+          }}
+        />
       </div>
 
       {/* ── Mobile card layout (<768px) ── */}

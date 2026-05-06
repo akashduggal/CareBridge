@@ -124,20 +124,27 @@ function resolveMockResponse(url: string, method: string, scenarioData: Scenario
   const patientDetailMatch = pathname.match(/^(?:api\/)?patients\/([^/]+)$/)
   if (method === 'GET' && patientDetailMatch) {
     const patientId = patientDetailMatch[1]
-    if (patientId === scenarioData.patient.id) {
-      return scenarioData.patient
-    }
-    return null
+    // Search the full patients list first, fall back to primary scenario patient
+    const patient =
+      scenarioData.patients.data.find((p) => p.id === patientId) ??
+      (patientId === scenarioData.patient.id ? scenarioData.patient : null)
+    return patient ?? null
   }
 
   // GET /patients/:id/discharges  (patient discharge history)
   const patientDischargesMatch = pathname.match(/^(?:api\/)?patients\/([^/]+)\/discharges$/)
   if (method === 'GET' && patientDischargesMatch) {
     const patientId = patientDischargesMatch[1]
+    // Return all discharges for this patient from the full discharge queue
+    const discharges = scenarioData.discharges.data.filter((d) => d.patientId === patientId)
+    if (discharges.length > 0) {
+      return { data: discharges, meta: { page: 1, limit: 25, total: discharges.length } }
+    }
+    // Fall back to primary patient discharge history
     if (patientId === scenarioData.patient.id) {
       return scenarioData.patientDischarges
     }
-    return null
+    return { data: [], meta: { page: 1, limit: 25, total: 0 } }
   }
 
   // GET /discharges/:id/calls  (calls for a discharge, shown in drawer)
