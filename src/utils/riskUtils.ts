@@ -35,17 +35,20 @@ export function shouldShowLowConfidenceWarning(confidence: number): boolean {
 
 /**
  * Determines which escalation section an escalation record belongs to.
- * - Tier 3 (riskTier === 3) takes precedence regardless of confidence
- * - Tier 2 (riskTier === 2) maps to the callback queue
- * - Low confidence (< 0.6) with riskTier < 3 maps to Human Review
- * - Throws if no section matches (e.g. Tier 1 with confidence ≥ 0.6)
+ * Precedence order: Tier 3 → Human Review → Tier 2 → Tier 1
+ * - Tier 3 (riskTier === 3) takes highest precedence regardless of confidence
+ * - Human Review (confidence < 0.6 AND riskTier < 3) takes next precedence
+ * - Tier 2 (riskTier === 2 AND confidence >= 0.6) maps to the callback queue
+ * - Tier 1 (riskTier === 1 AND confidence >= 0.6) maps to monitored patients
+ * - Throws if no section matches
  */
 export function getEscalationSection(
   riskTier: RiskTier,
   confidence: number
-): 'tier3' | 'tier2' | 'humanReview' {
+): 'tier3' | 'tier2' | 'humanReview' | 'tier1' {
   if (riskTier === 3) return 'tier3';
-  if (riskTier === 2) return 'tier2';
   if (confidence < 0.6 && riskTier < 3) return 'humanReview';
+  if (riskTier === 2 && confidence >= 0.6) return 'tier2';
+  if (riskTier === 1 && confidence >= 0.6) return 'tier1';
   throw new Error('Escalation does not match any section criteria');
 }

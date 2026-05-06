@@ -127,9 +127,15 @@ describe('getEscalationSection', () => {
     expect(getEscalationSection(3, 1.0)).toBe('tier3');
   });
 
-  it('returns tier2 for riskTier 2', () => {
-    expect(getEscalationSection(2, 0.0)).toBe('tier2');
+  it('returns tier2 for riskTier 2 with sufficient confidence', () => {
     expect(getEscalationSection(2, 0.8)).toBe('tier2');
+    expect(getEscalationSection(2, 0.6)).toBe('tier2');
+    expect(getEscalationSection(2, 1.0)).toBe('tier2');
+  });
+
+  it('returns humanReview for riskTier 2 with low confidence', () => {
+    expect(getEscalationSection(2, 0.0)).toBe('humanReview');
+    expect(getEscalationSection(2, 0.59)).toBe('humanReview');
   });
 
   it('returns humanReview for riskTier 1 with confidence < 0.6', () => {
@@ -137,9 +143,9 @@ describe('getEscalationSection', () => {
     expect(getEscalationSection(1, 0.59)).toBe('humanReview');
   });
 
-  it('throws for riskTier 1 with confidence >= 0.6', () => {
-    expect(() => getEscalationSection(1, 0.6)).toThrow();
-    expect(() => getEscalationSection(1, 1.0)).toThrow();
+  it('returns tier1 for riskTier 1 with confidence >= 0.6', () => {
+    expect(getEscalationSection(1, 0.6)).toBe('tier1');
+    expect(getEscalationSection(1, 1.0)).toBe('tier1');
   });
 });
 
@@ -162,16 +168,16 @@ test.prop([
 ], { numRuns: 20 })(
   'getEscalationSection returns exactly one valid section or throws for invalid input',
   ({ riskTier, confidence }) => {
-    const validSections = ['tier3', 'tier2', 'humanReview'] as const;
+    const validSections = ['tier3', 'tier2', 'humanReview', 'tier1'] as const;
 
     try {
       const section = getEscalationSection(riskTier as RiskTier, confidence);
       // If it returns, it must be exactly one valid section
       expect(validSections).toContain(section);
     } catch {
-      // Throwing is only valid for Tier 1 with confidence >= 0.6
-      expect(riskTier).toBe(1);
-      expect(confidence).toBeGreaterThanOrEqual(0.6);
+      // The function should never throw for valid tier/confidence combinations
+      // since all cases are now handled (tier1 routes to 'tier1' instead of throwing)
+      throw new Error(`Unexpected throw for riskTier=${riskTier}, confidence=${confidence}`);
     }
   }
 );

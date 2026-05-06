@@ -9,7 +9,6 @@ import { formatDateTime } from '@/utils/formatUtils'
 import { DiagnosisGroupBadge } from '@/components/DiagnosisGroupBadge'
 import { RiskTierBadge } from '@/components/RiskTierBadge'
 import { SkeletonCard } from '@/components/SkeletonCard'
-import { EmptyState } from '@/components/EmptyState'
 import { ErrorBanner } from '@/components/ErrorBanner'
 import type { ApiResponse, Escalation } from '@/types'
 
@@ -111,6 +110,35 @@ function HumanReviewCard({ escalation, callHref }: { escalation: Escalation; cal
   )
 }
 
+// ─── Section empty state ──────────────────────────────────────────────────────
+
+interface SectionEmptyStateProps {
+  message: string
+}
+
+function SectionEmptyState({ message }: SectionEmptyStateProps) {
+  return (
+    <p className="text-sm text-gray-400 py-4 text-center">{message}</p>
+  )
+}
+
+// ─── Tier 1 monitored card ────────────────────────────────────────────────────
+
+function Tier1MonitoredCard({ escalation }: { escalation: Escalation }) {
+  return (
+    <div className="border border-green-200 bg-green-50 rounded-lg p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-green-900 font-semibold">{escalation.patientName}</span>
+        <RiskTierBadge tier={escalation.riskTier} />
+        <DiagnosisGroupBadge group={escalation.diagnosisGroup} />
+      </div>
+      <p className="mt-1 text-sm text-green-700">
+        Discharged: {formatDateTime(escalation.dischargeDateTime)}
+      </p>
+    </div>
+  )
+}
+
 // ─── EscalationPage ───────────────────────────────────────────────────────────
 
 export function EscalationPage() {
@@ -130,24 +158,23 @@ export function EscalationPage() {
   }
 
   // Partition escalations into sections using getEscalationSection routing logic.
-  // Records that don't match any section (e.g. Tier 1 with confidence ≥ 0.6) are
-  // silently skipped — they should not appear in the escalation view.
+  // Records that throw (no matching section) are silently skipped.
   const tier3: Escalation[] = []
   const tier2: Escalation[] = []
   const humanReview: Escalation[] = []
+  const tier1: Escalation[] = []
 
   for (const esc of escalations) {
     try {
       const section = getEscalationSection(esc.riskTier, esc.confidence)
       if (section === 'tier3') tier3.push(esc)
       else if (section === 'tier2') tier2.push(esc)
-      else humanReview.push(esc)
+      else if (section === 'humanReview') humanReview.push(esc)
+      else if (section === 'tier1') tier1.push(esc)
     } catch {
       // Record doesn't qualify for any section — skip
     }
   }
-
-  const allEmpty = tier3.length === 0 && tier2.length === 0 && humanReview.length === 0
 
   return (
     <div className="space-y-6">
@@ -165,62 +192,83 @@ export function EscalationPage() {
           <SectionSkeleton />
           <SectionSkeleton />
           <SectionSkeleton />
+          <SectionSkeleton />
         </div>
       )}
 
-      {!isLoading && !isError && allEmpty && (
-        <EmptyState message="No active escalations" />
-      )}
-
-      {!isLoading && !isError && !allEmpty && (
+      {!isLoading && !isError && (
         <div className="space-y-8">
           {/* ── Tier 3 Urgent Alerts ── */}
-          {tier3.length > 0 && (
-            <section aria-label="Tier 3 Urgent Alerts">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-red-700">
-                Tier 3 — Urgent Alerts
-              </h2>
-              {/* aria-live region so screen readers announce new urgent alerts */}
-              <div
-                aria-live="polite"
-                aria-atomic="false"
-                aria-relevant="additions"
-                className="space-y-3"
-              >
-                {tier3.map((esc) => (
+          <section aria-label="Tier 3 Urgent Alerts">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-red-700">
+              Tier 3 — Urgent Alerts
+            </h2>
+            {/* aria-live region so screen readers announce new urgent alerts */}
+            <div
+              aria-live="polite"
+              aria-atomic="false"
+              aria-relevant="additions"
+              className="space-y-3"
+            >
+              {tier3.length > 0 ? (
+                tier3.map((esc) => (
                   <Tier3AlertBanner key={esc.id} escalation={esc} callHref={callHref(esc.callId)} />
-                ))}
-              </div>
-            </section>
-          )}
+                ))
+              ) : (
+                <SectionEmptyState message="No urgent alerts" />
+              )}
+            </div>
+          </section>
 
           {/* ── Tier 2 Callback Queue (Nurse/Admin only) ── */}
-          {!isPhysician && tier2.length > 0 && (
+          {!isPhysician && (
             <section aria-label="Tier 2 Callback Queue">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-amber-700">
                 Tier 2 — Callback Queue
               </h2>
               <div className="space-y-3">
-                {tier2.map((esc) => (
-                  <Tier2CallbackCard key={esc.id} escalation={esc} />
-                ))}
+                {tier2.length > 0 ? (
+                  tier2.map((esc) => (
+                    <Tier2CallbackCard key={esc.id} escalation={esc} />
+                  ))
+                ) : (
+                  <SectionEmptyState message="No callbacks pending" />
+                )}
               </div>
             </section>
           )}
 
-          {/* ── Human Review Queue ── */}
-          {humanReview.length > 0 && (
-            <section aria-label="Human Review Queue">
-              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-600">
-                Human Review
-              </h2>
-              <div className="space-y-3">
-                {humanReview.map((esc) => (
+          {/* ── Human Review ── */}
+          <section aria-label="Human Review">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gray-600">
+              Human Review
+            </h2>
+            <div className="space-y-3">
+              {humanReview.length > 0 ? (
+                humanReview.map((esc) => (
                   <HumanReviewCard key={esc.id} escalation={esc} callHref={callHref(esc.callId)} />
-                ))}
-              </div>
-            </section>
-          )}
+                ))
+              ) : (
+                <SectionEmptyState message="No cases for review" />
+              )}
+            </div>
+          </section>
+
+          {/* ── Tier 1 Monitored ── */}
+          <section aria-label="Tier 1 Monitored">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-green-700">
+              Tier 1 — Monitored
+            </h2>
+            <div className="space-y-3">
+              {tier1.length > 0 ? (
+                tier1.map((esc) => (
+                  <Tier1MonitoredCard key={esc.id} escalation={esc} />
+                ))
+              ) : (
+                <SectionEmptyState message="No monitored patients" />
+              )}
+            </div>
+          </section>
         </div>
       )}
     </div>

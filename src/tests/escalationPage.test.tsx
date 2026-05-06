@@ -320,7 +320,11 @@ describe('14.2 – Tier 3 urgent alerts section', () => {
     renderPage()
 
     await waitFor(() => {
-      expect(screen.getByText(/no active escalations/i)).toBeInTheDocument()
+      // Each section renders its own per-section empty state message
+      expect(screen.getByText('No urgent alerts')).toBeInTheDocument()
+      expect(screen.getByText('No callbacks pending')).toBeInTheDocument()
+      expect(screen.getByText('No cases for review')).toBeInTheDocument()
+      expect(screen.getByText('No monitored patients')).toBeInTheDocument()
     })
   })
 
@@ -446,8 +450,10 @@ describe('14.2 – Tier 3 urgent alerts section', () => {
       expect(screen.getByText('Tier3 Only Patient')).toBeInTheDocument()
     })
 
-    // Tier 2 section should not exist (no tier 2 records)
-    expect(screen.queryByRole('region', { name: /tier 2 callback queue/i })).not.toBeInTheDocument()
+    // Tier 2 section is always rendered (with empty state) — but the patient should not be in it
+    const tier2Section = screen.getByRole('region', { name: /tier 2 callback queue/i })
+    expect(within(tier2Section).queryByText('Tier3 Only Patient')).not.toBeInTheDocument()
+    expect(within(tier2Section).getByText('No callbacks pending')).toBeInTheDocument()
   })
 
   // ─── WebSocket: escalation_triggered adds to Tier 3 section ──────────────
@@ -501,7 +507,7 @@ test.prop([
 ])(
   'Property 4 – getEscalationSection returns exactly one valid section or throws for invalid input',
   ({ riskTier, confidence }) => {
-    const validSections = ['tier3', 'tier2', 'humanReview'] as const
+    const validSections = ['tier3', 'tier2', 'humanReview', 'tier1'] as const
 
     try {
       const section = getEscalationSection(riskTier as RiskTier, confidence)
@@ -509,20 +515,23 @@ test.prop([
       // Must return exactly one valid section identifier
       expect(validSections).toContain(section)
 
-      // Verify routing rules are followed exclusively:
+      // Verify routing rules are followed exclusively (precedence order):
       if (riskTier === 3) {
         // Rule 1: Tier 3 always routes to tier3, regardless of confidence
         expect(section).toBe('tier3')
-      } else if (riskTier === 2) {
-        // Rule 2: Tier 2 always routes to tier2
-        expect(section).toBe('tier2')
       } else if (confidence < 0.6 && riskTier < 3) {
-        // Rule 3: Low confidence + riskTier < 3 routes to humanReview
+        // Rule 2: Low confidence + riskTier < 3 routes to humanReview (takes precedence over tier2)
         expect(section).toBe('humanReview')
+      } else if (riskTier === 2 && confidence >= 0.6) {
+        // Rule 3: Tier 2 with sufficient confidence routes to tier2
+        expect(section).toBe('tier2')
+      } else if (riskTier === 1 && confidence >= 0.6) {
+        // Rule 4: Tier 1 with sufficient confidence routes to tier1
+        expect(section).toBe('tier1')
       }
 
       // Exclusivity: the returned section is unique — no other section would
-      // also claim this record. Verify by checking the other two sections
+      // also claim this record. Verify by checking the other sections
       // would NOT be the result for the same input.
       const otherSections = validSections.filter((s) => s !== section)
       // The function is deterministic — calling it again must return the same section
@@ -532,10 +541,203 @@ test.prop([
         expect(section).not.toBe(other)
       }
     } catch {
-      // Throwing is only valid for Tier 1 with confidence >= 0.6
-      // (no section matches this combination)
-      expect(riskTier).toBe(1)
-      expect(confidence).toBeGreaterThanOrEqual(0.6)
+      // The function should never throw for valid tier/confidence combinations
+      // since all cases are now handled (tier1 routes to 'tier1' instead of throwing)
+      // If it does throw, fail the test
+      throw new Error(`Unexpected throw for riskTier=${riskTier}, confidence=${confidence}`)
     }
   }
 )
+
+// ─── escalation-tiers-all-sections – new behavior ────────────────────────────
+
+describe('escalation-tiers-all-sections – new behavior', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  // 7.1 – All four sections render when data loads with zero records (all-empty state)
+  it('7.1 – all four sections render with empty states when data is empty (Nurse role)', async () => {
+    ;(apiClient as Mock).mockResolvedValue(makeApiResponse([]))
+
+    renderPage('nurse')
+
+    // All four sections must be in the DOM
+    await waitFor(() => {
+      expect(screen.getByRole('region', { name: /tier 3 urgent alerts/i })).toBeInTheDocument()
+      expect(screen.getByRole('region', { name: /tier 2 callback queue/i })).toBeInTheDocument()
+      expect(screen.getByRole('region', { name: /human review/i })).toBeInTheDocument()
+      expect(screen.getByRole('region', { name: /tier 1 monitored/i })).toBeInTheDocument()
+    })
+
+    // Global "No active escalations" must NOT appear
+    expect(screen.queryByText(/no active escalations/i)).toBeNull()
+
+    // Each section shows its correct per-section empty state message
+    const tier3Section = screen.getByRole('region', { name: /tier 3 urgent alerts/i })
+    const tier2Section = screen.getByRole('region', { name: /tier 2 callback queue/i })
+    const humanReviewSection = screen.getByRole('region', { name: /human review/i })
+    const tier1Section = screen.getByRole('region', { name: /tier 1 monitored/i })
+
+    expect(within(tier3Section).getByText('No urgent alerts')).toBeInTheDocument()
+    expect(within(tier2Section).getByText('No callbacks pending')).toBeInTheDocument()
+    expect(within(humanReviewSection).getByText('No cases for review')).toBeInTheDocument()
+    expect(within(tier1Section).getByText('No monitored patients')).toBeInTheDocument()
+  })
+
+  // 7.2 – Four loading skeletons render while query is in-flight
+  it('7.2 – four SectionSkeleton containers render while query is in-flight', () => {
+    ;(apiClient as Mock).mockReturnValue(new Promise(() => {})) // never resolves
+
+    renderPage('nurse')
+
+    // Each SectionSkeleton renders three SkeletonCard elements with animate-pulse.
+    // Four skeletons × 3 cards each = 12 animate-pulse elements minimum.
+    // We assert at least 4 skeleton containers (one per section).
+    const pulseElements = document.querySelectorAll('.animate-pulse')
+    expect(pulseElements.length).toBeGreaterThanOrEqual(4)
+  })
+
+  // 7.3 – Tier 1 Monitored section renders Tier1MonitoredCard for a qualifying record
+  it('7.3 – Tier 1 Monitored section renders Tier1MonitoredCard for a qualifying record', async () => {
+    const esc = makeEscalation({
+      riskTier: 1,
+      riskScore: 2,
+      confidence: 0.8,
+      patientName: 'Monitored Patient',
+      diagnosisGroup: 'CHF',
+      dischargeDateTime: '2024-01-15T10:00:00Z',
+    })
+    ;(apiClient as Mock).mockResolvedValue(makeApiResponse([esc]))
+
+    renderPage('nurse')
+
+    await waitFor(() => {
+      const tier1Section = screen.getByRole('region', { name: /tier 1 monitored/i })
+      // Patient name appears inside the section
+      expect(within(tier1Section).getByText('Monitored Patient')).toBeInTheDocument()
+      // DiagnosisGroupBadge text appears in the section
+      expect(within(tier1Section).getByText('CHF')).toBeInTheDocument()
+      // Discharge date text appears in the section (formatted as "Jan 15, 2024")
+      expect(within(tier1Section).getByText(/Jan 15, 2024/)).toBeInTheDocument()
+    })
+  })
+
+  // 7.4 – Tier 1 record with confidence < 0.6 routes to Human Review, not Tier 1 Monitored
+  it('7.4 – Tier 1 record with confidence < 0.6 routes to Human Review, not Tier 1 Monitored', async () => {
+    const esc = makeEscalation({
+      riskTier: 1,
+      riskScore: 2,
+      confidence: 0.4,
+      patientName: 'Low Conf Patient',
+    })
+    ;(apiClient as Mock).mockResolvedValue(makeApiResponse([esc]))
+
+    renderPage('nurse')
+
+    await waitFor(() => {
+      // Patient name appears in Human Review section
+      const humanReviewSection = screen.getByRole('region', { name: /human review/i })
+      expect(within(humanReviewSection).getByText('Low Conf Patient')).toBeInTheDocument()
+    })
+
+    // Tier 1 Monitored section shows its empty state
+    const tier1Section = screen.getByRole('region', { name: /tier 1 monitored/i })
+    expect(within(tier1Section).getByText('No monitored patients')).toBeInTheDocument()
+    expect(within(tier1Section).queryByText('Low Conf Patient')).not.toBeInTheDocument()
+  })
+
+  // 7.5 – Tier 2 section shows "No callbacks pending" empty state for Nurse when no Tier 2 records exist
+  it('7.5 – Tier 2 section shows "No callbacks pending" for Nurse when no Tier 2 records exist', async () => {
+    // Only a Tier 3 record — no Tier 2 records
+    const tier3Esc = makeEscalation({ riskTier: 3, riskScore: 9, confidence: 0.8, patientName: 'Urgent Patient' })
+    ;(apiClient as Mock).mockResolvedValue(makeApiResponse([tier3Esc]))
+
+    renderPage('nurse')
+
+    await waitFor(() => {
+      // Tier 2 section is in the DOM
+      expect(screen.getByRole('region', { name: /tier 2 callback queue/i })).toBeInTheDocument()
+    })
+
+    const tier2Section = screen.getByRole('region', { name: /tier 2 callback queue/i })
+    expect(within(tier2Section).getByText('No callbacks pending')).toBeInTheDocument()
+  })
+
+  // 7.6 – Tier 2 section absent for Physician even when all-empty
+  it('7.6 – Tier 2 section absent for Physician even when all-empty', async () => {
+    ;(apiClient as Mock).mockResolvedValue(makeApiResponse([]))
+
+    renderPage('physician')
+
+    await waitFor(() => {
+      // Other sections are present to confirm data has loaded
+      expect(screen.getByRole('region', { name: /tier 3 urgent alerts/i })).toBeInTheDocument()
+    })
+
+    expect(screen.queryByRole('region', { name: /tier 2 callback queue/i })).toBeNull()
+  })
+
+  // 7.7 – WebSocket escalation_triggered event replaces Tier 1 empty state with a card
+  it('7.7 – WebSocket escalation_triggered event replaces Tier 1 empty state with a card', async () => {
+    ;(apiClient as Mock).mockResolvedValue(makeApiResponse([]))
+
+    const { qc } = renderPage('nurse')
+
+    // Initially, Tier 1 section shows empty state
+    await waitFor(() => {
+      const tier1Section = screen.getByRole('region', { name: /tier 1 monitored/i })
+      expect(within(tier1Section).getByText('No monitored patients')).toBeInTheDocument()
+    })
+
+    // Simulate WebSocket escalation_triggered event injecting a Tier 1 record
+    const newEsc = makeEscalation({
+      id: 'ws-esc-1',
+      riskTier: 1,
+      riskScore: 2,
+      confidence: 0.9,
+      patientName: 'WebSocket Patient',
+    })
+
+    act(() => {
+      qc.setQueryData(['escalations'], (old: ApiResponse<Escalation[]> | undefined) => {
+        if (!old) return { data: [newEsc] }
+        return { ...old, data: [newEsc, ...old.data] }
+      })
+    })
+
+    // Card appears in Tier 1 section and empty state is gone
+    await waitFor(() => {
+      const tier1Section = screen.getByRole('region', { name: /tier 1 monitored/i })
+      expect(within(tier1Section).getByText('WebSocket Patient')).toBeInTheDocument()
+      expect(within(tier1Section).queryByText('No monitored patients')).not.toBeInTheDocument()
+    })
+  })
+
+  // 7.8 – Section DOM order is Tier 3 → Tier 2 → Human Review → Tier 1 for Nurse role
+  it('7.8 – section DOM order is Tier 3 → Tier 2 → Human Review → Tier 1 for Nurse role', async () => {
+    ;(apiClient as Mock).mockResolvedValue(makeApiResponse([]))
+
+    renderPage('nurse')
+
+    await waitFor(() => {
+      // Wait for all sections to be rendered
+      expect(screen.getByRole('region', { name: /tier 1 monitored/i })).toBeInTheDocument()
+    })
+
+    const headings = screen.getAllByRole('heading', { level: 2 })
+    const tier3Index = headings.findIndex((h) => /tier 3/i.test(h.textContent ?? ''))
+    const tier2Index = headings.findIndex((h) => /tier 2/i.test(h.textContent ?? ''))
+    const humanReviewIndex = headings.findIndex((h) => /human review/i.test(h.textContent ?? ''))
+    const tier1Index = headings.findIndex((h) => /tier 1/i.test(h.textContent ?? ''))
+
+    expect(tier3Index).toBeGreaterThanOrEqual(0)
+    expect(tier2Index).toBeGreaterThanOrEqual(0)
+    expect(humanReviewIndex).toBeGreaterThanOrEqual(0)
+    expect(tier1Index).toBeGreaterThanOrEqual(0)
+
+    expect(tier3Index).toBeLessThan(tier2Index)
+    expect(tier2Index).toBeLessThan(humanReviewIndex)
+    expect(humanReviewIndex).toBeLessThan(tier1Index)
+  })
+})
